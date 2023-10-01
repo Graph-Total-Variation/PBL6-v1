@@ -1,0 +1,4 @@
+17:12:31 root INFO Train DGTV
+17:12:31 root INFO train_dgtv.py --batch 32 --lr 1e-4 --umin 0.001 --umax 1000 -m model/DGTV.pkl --epoch 50 --train tmp/patches/ --width 36
+17:12:31 root INFO CUDA: False
+17:12:31 root INFO 1_0.png

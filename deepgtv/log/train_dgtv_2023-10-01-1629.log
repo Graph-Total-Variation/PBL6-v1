@@ -1,0 +1,6 @@
+16:29:17 root INFO Train DGTV
+16:29:17 root INFO train_dgtv.py --batch 32 --lr 1e-4 --umin 0.001 --umax 1000 -m model/DGTV.pkl --epoch 50 --train deepgtv/tmp --width 36
+16:29:17 root INFO CUDA: False
+16:29:52 root INFO Train DGTV
+16:29:52 root INFO train_dgtv.py --batch 32 --lr 1e-4 --umin 0.001 --umax 1000 -m model/DGTV.pkl --epoch 50 --train deepgtv//tmp --width 36
+16:29:52 root INFO CUDA: False
