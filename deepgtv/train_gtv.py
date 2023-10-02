@@ -71,8 +71,8 @@ def main(
         prox_iter=1,
         u_max=10,
         u_min=0.5,
-        lambda_min=0.5,
-        lambda_max=1e9,
+        #lambda_min=0.5,
+        #lambda_max=1e9,
         cuda=cuda,
         opt=opt,
     )
