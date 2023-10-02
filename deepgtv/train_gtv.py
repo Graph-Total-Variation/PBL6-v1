@@ -248,6 +248,7 @@ if __name__ == "__main__":
     opt.ver = True
     opt.train = args.train
     opt.width = args.width
+    opt.legacy = True
     torch.manual_seed(args.seed)
     logging.basicConfig(
         filename="log/train_gtv_{0}.log".format(time.strftime("%Y-%m-%d-%H%M")),
