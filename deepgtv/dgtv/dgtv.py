@@ -43,12 +43,15 @@ class cnnf_2(nn.Module):
         out = self.layer(x)
         return out
 
+
 class uu(nn.Module):
     def __init__(self):
-        super(uu,self).__init__()
+        super(uu, self).__init__()
         self.u = torch.nn.Parameter(torch.rand(1), requires_grad=True)
+
     def forward(self):
         return self.u
+
 
 class cnnu(nn.Module):
     """
@@ -100,6 +103,7 @@ class cnnu(nn.Module):
 
         return int(m)
 
+
 class RENOIR_Dataset(Dataset):
     """
     Dataset loader
@@ -149,7 +153,7 @@ class RENOIR_Dataset(Dataset):
     def __getitem__(self, idx):
         if torch.is_tensor(idx):
             idx = idx.tolist()
-        uid = np.random.randint(0, 8) # augment type
+        uid = np.random.randint(0, 8)  # augment type
         # uid = 0
         nimg_name = os.path.join(self.npath, self.nimg_name[idx])
         nimg = cv2.imread(nimg_name)
@@ -210,7 +214,7 @@ class ToTensor(object):
         nimg = nimg.transpose((2, 0, 1))
         rimg = rimg.transpose((2, 0, 1))
         return {
-            "nimg": torch.from_numpy(nimg), 
+            "nimg": torch.from_numpy(nimg),
             "rimg": torch.from_numpy(rimg)
         }
 
@@ -267,6 +271,7 @@ def weights_init_normal(m):
     classname = m.__class__.__name__
     if classname.find("Conv") != -1:
         torch.nn.init.normal_(m.weight.data, 0.0, 0.02)
+
 
 class OPT:
     def __init__(
@@ -380,19 +385,21 @@ class GTV(nn.Module):
             u = self.cnnu.forward(xf)
             u = u.unsqueeze(1).unsqueeze(1)
         else:
-            u=self.uu.forward()
+            u = self.uu.forward()
         u_max = self.opt.u_max
         u_min = self.opt.u_min
         if debug:
             self.u = u.clone()
         u = torch.clamp(u, u_min, u_max)
 
-        z = self.opt.H.matmul(xf.view(xf.shape[0], xf.shape[1], self.opt.width ** 2, 1))
+        z = self.opt.H.matmul(
+            xf.view(xf.shape[0], xf.shape[1], self.opt.width ** 2, 1))
 
         ###################
         E = self.cnnf.forward(xf)
         Fs = (
-            self.opt.H.matmul(E.view(E.shape[0], E.shape[1], self.opt.width ** 2, 1))
+            self.opt.H.matmul(
+                E.view(E.shape[0], E.shape[1], self.opt.width ** 2, 1))
             ** 2
         )
 
@@ -400,7 +407,7 @@ class GTV(nn.Module):
         if debug:
             s = f"Sample WEIGHT SUM: {w[0, :, :].sum().item():.4f} || Mean Processed u: {u.mean().item():.4f}"
             self.logger.info(s)
-            
+
         w = w.unsqueeze(1).repeat(1, self.opt.channels, 1, 1)
 
         W = self.base_W.clone()
@@ -451,7 +458,8 @@ class GTV(nn.Module):
             L1 = L @ self.support_L
             L = torch.diag_embed(L1.squeeze(-1)) - L
 
-            xhat = self.qpsolve(L, u, y, self.support_identity, self.opt.channels)
+            xhat = self.qpsolve(
+                L, u, y, self.support_identity, self.opt.channels)
             return xhat
         xhat = glr(xhat, w, u)
         xhat = glr(xhat, w, u)
@@ -487,7 +495,7 @@ class GTV(nn.Module):
         t = torch.inverse(Im + u * L)
 
         return t @ y
-    
+
     def forward_approx(self, xf, debug=False, manual_debug=False):  # gtvapprox
         self.base_W = torch.zeros(
             xf.shape[0], self.opt.channels, self.opt.width ** 2, self.opt.width ** 2
@@ -515,14 +523,16 @@ class GTV(nn.Module):
         # u = u.unsqueeze(1).unsqueeze(1)
         u = u.unsqueeze(1)
 
-        z = self.opt.H.matmul(xf.view(xf.shape[0], xf.shape[1], self.opt.width ** 2, 1))
+        z = self.opt.H.matmul(
+            xf.view(xf.shape[0], xf.shape[1], self.opt.width ** 2, 1))
 
         ###################
         E = self.cnnf.forward(xf)
         if manual_debug:
             return_dict["f"].append(E)
         Fs = (
-            self.opt.H.matmul(E.view(E.shape[0], E.shape[1], self.opt.width ** 2, 1))
+            self.opt.H.matmul(
+                E.view(E.shape[0], E.shape[1], self.opt.width ** 2, 1))
             ** 2
         )
         w = torch.exp(-(Fs.sum(axis=1)) / (self.weight_sigma ** 2))
@@ -625,9 +635,12 @@ class GTV(nn.Module):
             return xhat
 
         if manual_debug:
-            xhat2 = glr(xhat, w, u, debug=manual_debug, return_dict=return_dict)
-            xhat3 = glr(xhat2, w, u, debug=manual_debug, return_dict=return_dict)
-            xhat4 = glr(xhat3, w, u, debug=manual_debug, return_dict=return_dict)
+            xhat2 = glr(xhat, w, u, debug=manual_debug,
+                        return_dict=return_dict)
+            xhat3 = glr(xhat2, w, u, debug=manual_debug,
+                        return_dict=return_dict)
+            xhat4 = glr(xhat3, w, u, debug=manual_debug,
+                        return_dict=return_dict)
             return (
                 xhat4.view(
                     xhat4.shape[0], self.opt.channels, self.opt.width, self.opt.width
@@ -647,16 +660,20 @@ class GTV(nn.Module):
         v, H_M = self.planczos(L, order, dx)
         H_M_eval, H_M_evec = torch.symeig(H_M, eigenvectors=True)
         H_M_eval = torch.clamp(H_M_eval, 0, H_M_eval.max().item())
-        fv = H_M_evec @ torch.diag_embed(f(H_M_eval, u)) @ H_M_evec.permute(0, 1, 3, 2)
-        approx = torch.norm(dx, dim=2).unsqueeze(-1).unsqueeze(-1) * v @ fv @ e1
+        fv = H_M_evec @ torch.diag_embed(f(H_M_eval, u)
+                                         ) @ H_M_evec.permute(0, 1, 3, 2)
+        approx = torch.norm(
+            dx, dim=2).unsqueeze(-1).unsqueeze(-1) * v @ fv @ e1
         return approx
 
     def planczos(self, A, order, x):
         q = x / torch.norm(x, dim=2, keepdim=True)
-        V = torch.zeros((x.shape[0], x.shape[1], x.shape[2], order), device=self.device)
+        V = torch.zeros(
+            (x.shape[0], x.shape[1], x.shape[2], order), device=self.device)
         V[:, :, :, 0] = q
         q = q.unsqueeze(-1)
-        H = torch.zeros((x.shape[0], x.shape[1], order + 1, order), device=self.device)
+        H = torch.zeros(
+            (x.shape[0], x.shape[1], order + 1, order), device=self.device)
         r = A @ q
         H[:, :, 0, 0] = torch.sum(q * r, axis=[-2, -1])
 
@@ -698,8 +715,10 @@ class GTV(nn.Module):
             P = self.forward_approx(P)
         return P
 
+
 def f(x, u=0.5):
     return 1 / (1 + u * x)
+
 
 class DeepGTV(nn.Module):
     """
@@ -716,7 +735,8 @@ class DeepGTV(nn.Module):
         opt=None
     ):
         super(DeepGTV, self).__init__()
-        self.gtv1 = GTV(width=width, u_max=u_max, u_min=u_min, cuda=cuda, opt=opt,)
+        self.gtv1 = GTV(width=width, u_max=u_max,
+                        u_min=u_min, cuda=cuda, opt=opt,)
 
         self.opt = opt
         if cuda:
@@ -744,8 +764,6 @@ class DeepGTV(nn.Module):
         P = self.gtv1.lancz_predict(P)
 
         return P
-
-
 
     def forward(self, sample, debug=False):
         if not debug:
@@ -779,19 +797,23 @@ def supporting_matrix(opt):
     for e, p in enumerate(A_pair):
         H[e, p[0]] = 1
         H[e, p[1]] = -1
-        A = F.relu(A - 1e-10)
+        # A = F.relu(A - 1e-10)
         A[p[0], p[1]] = 1
 
-    opt.I = I  
+    opt.I = I
     opt.pairs = A_pair
-    opt.H = H 
+    opt.H = H
     opt.connectivity_full = A.requires_grad_(True)
     opt.connectivity_idx = torch.where(A > 0)
 
     for e, p in enumerate(A_pair):
-        A = F.relu(A - 1e-10)
-        A[p[1], p[0]] = 1
+        # A = F.relu(A - 1e-10)
+        # A[p[1], p[0]] = 1
+        A_temp = A.clone()
+        A_temp[p[1], p[0]] = 1
+        A = A_temp
     opt.logger.info("OPT created on cuda: {0} {1}".format(cuda, dtype))
+
 
 def mkdir(d, remove=True):
     try:
@@ -846,7 +868,8 @@ def patch_splitting(dataset, output_dst, patch_size=36, stride=18):
             img = img.transpose(1, 2, 0)
             plt.imsave(
                 os.path.join(
-                    output_dst_noisy, "{0}_{1}.{2}".format(img_name, i, img_ext)
+                    output_dst_noisy, "{0}_{1}.{2}".format(
+                        img_name, i, img_ext)
                 ),
                 img,
             )
