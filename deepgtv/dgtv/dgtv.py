@@ -779,7 +779,6 @@ def supporting_matrix(opt):
     for e, p in enumerate(A_pair):
         H[e, p[0]] = 1
         H[e, p[1]] = -1
-        A = F.relu(A - 1e-10)
         A[p[0], p[1]] = 1
 
     opt.I = I  
@@ -789,8 +788,9 @@ def supporting_matrix(opt):
     opt.connectivity_idx = torch.where(A > 0)
 
     for e, p in enumerate(A_pair):
-        A = F.relu(A - 1e-10)
-        A[p[1], p[0]] = 1
+        A_temp = A.clone()
+        A_temp[p[1], p[0]] = 1
+        A = A_temp
     opt.logger.info("OPT created on cuda: {0} {1}".format(cuda, dtype))
 
 def mkdir(d, remove=True):
