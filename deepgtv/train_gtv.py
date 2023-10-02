@@ -213,7 +213,7 @@ def main(
 
 opt = OPT(
     batch_size=50,
-    channels=3,
+    channels=1,
     lr=8e-6,
     momentum=0.9,
     u_max=65,
