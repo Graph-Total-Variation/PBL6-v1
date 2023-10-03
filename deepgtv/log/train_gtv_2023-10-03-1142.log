@@ -1,0 +1,8 @@
+11:42:06 root INFO Train GTV
+11:42:06 root INFO train_gtv.py --batch 1 --lr 1e-3 --umin 0.01 --umax 100 -m model/GTV.pkl --epoch 5 --train dataset/dataset_structure --width 36
+11:42:06 root INFO CUDA: False
+11:42:06 root INFO Splitting patches...
+11:42:59 root INFO OPT created on cuda: False <class 'torch.FloatTensor'>
+11:42:59 root INFO Dataset: 2916
+11:42:59 root INFO GTV created on cuda: False
+11:42:59 root INFO batch_size = 1, width = 36, channels = 1, u_min = 0.01, u_max = 100.0, lr = 0.001, momentum = 0.9

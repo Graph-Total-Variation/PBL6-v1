@@ -41,7 +41,8 @@ def main(
         subset = [i + "_" for i in subset]
     dataset = RENOIR_Dataset(
         img_dir=os.path.join(opt.train),
-        transform=transforms.Compose([standardize(normalize=False), ToTensor()]),
+        transform=transforms.Compose(
+            [standardize(normalize=False), ToTensor()]),
         subset=None,
     )
     opt.logger.info("Splitting patches...")
@@ -50,7 +51,8 @@ def main(
     )
     dataset = RENOIR_Dataset(
         img_dir=os.path.join("tmp", "patches"),
-        transform=transforms.Compose([standardize(normalize=False), ToTensor()]),
+        transform=transforms.Compose(
+            [standardize(normalize=False), ToTensor()]),
         subset=subset,
     )
 
@@ -71,8 +73,8 @@ def main(
         prox_iter=1,
         u_max=10,
         u_min=0.5,
-        lambda_min=0.5,
-        lambda_max=1e9,
+        # lambda_min=0.5,
+        # lambda_max=1e9,
         cuda=cuda,
         opt=opt,
     )
@@ -151,7 +153,8 @@ def main(
         tnow = time.time()
         opt.logger.info(
             "[{0}] \x1b[31mLOSS\x1b[0m: {1:.8f}, time elapsed: {2:.1f} secs, epoch time: {3:.1f} secs".format(
-                epoch + 1, running_loss / (ld * (i + 1)), tnow - tstart, tnow - tprev
+                epoch + 1, running_loss /
+                (ld * (i + 1)), tnow - tstart, tnow - tprev
             )
         )
         tprev = tnow
@@ -160,7 +163,8 @@ def main(
             with torch.no_grad():
                 histW = gtv(inputs, debug=1)
                 opt.logger.info(
-                    "\tLOSS: {0:.8f}".format((histW - labels).square().mean().item())
+                    "\tLOSS: {0:.8f}".format(
+                        (histW - labels).square().mean().item())
                 )
             if opt.ver:  # experimental version
                 opt.logger.info(
@@ -198,14 +202,16 @@ def main(
 
         losshist.append(running_loss / (ld * (i + 1)))
     torch.save(gtv.state_dict(), SAVEDIR + str(epoch) + "." + SAVEPATH)
-    torch.save(optimizer.state_dict(), SAVEDIR + str(epoch) + "." + SAVEPATH + "optim")
+    torch.save(optimizer.state_dict(), SAVEDIR +
+               str(epoch) + "." + SAVEPATH + "optim")
 
     opt.logger.info("Total running time: {0:.3f}".format(time.time() - tstart))
     fig, ax = plt.subplots(1, 1, figsize=(12, 5))
 
     cumsum_vec = np.cumsum(np.insert(losshist, 0, 0))
     window_width = 30
-    ma_vec = (cumsum_vec[window_width:] - cumsum_vec[:-window_width]) / window_width
+    ma_vec = (cumsum_vec[window_width:] -
+              cumsum_vec[:-window_width]) / window_width
     ax.plot(ma_vec)
     ax.set(ylim=[0, ax.get_ylim()[1] * 1.05])
     fig.savefig("loss.png")
@@ -213,7 +219,8 @@ def main(
 
 opt = OPT(
     batch_size=50,
-    channels=3,
+    # channels=3,
+    channels=1,
     lr=8e-6,
     momentum=0.9,
     u_max=65,
@@ -248,9 +255,11 @@ if __name__ == "__main__":
     opt.ver = True
     opt.train = args.train
     opt.width = args.width
+    opt.legacy = True
     torch.manual_seed(args.seed)
     logging.basicConfig(
-        filename="log/train_gtv_{0}.log".format(time.strftime("%Y-%m-%d-%H%M")),
+        filename="log/train_gtv_{0}.log".format(
+            time.strftime("%Y-%m-%d-%H%M")),
         filemode="a",
         format="%(asctime)s %(name)s %(levelname)s %(message)s",
         datefmt="%H:%M:%S",
@@ -268,7 +277,6 @@ if __name__ == "__main__":
         model_name=args.model,
         cont=cont,
         epoch=int(args.epoch),
-        subset=["1", "3", "5", "7", "9"],
+        subset=["1", "2", "3", "4"],
         args=args,
     )
-

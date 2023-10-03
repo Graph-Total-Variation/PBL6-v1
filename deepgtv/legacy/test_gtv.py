@@ -6,7 +6,7 @@ import time
 import cv2
 import matplotlib.pyplot as plt
 import argparse
-from train_gtv import *
+from deepgtv.train_gtv import *
 import logging
 
 cuda = True if torch.cuda.is_available() else False
@@ -72,7 +72,8 @@ def denoise(
     if argref:
         T1r = ref
 
-    T1 = torch.nn.functional.pad(T1, (0, stride, 0, stride), mode="constant", value=0)
+    T1 = torch.nn.functional.pad(
+        T1, (0, stride, 0, stride), mode="constant", value=0)
     shapex = T1.shape
     T2 = (
         torch.from_numpy(T1.detach().numpy().transpose(1, 2, 0))
@@ -92,10 +93,10 @@ def denoise(
     with torch.no_grad():
         for ii, i in enumerate(range(0, T2.shape[0], MAX_PATCH)):
             P = gtv.predict(
-                T2[i : (i + MAX_PATCH), :, :, :].float().contiguous(),
+                T2[i: (i + MAX_PATCH), :, :, :].float().contiguous(),
                 layers=args.layers,
             )
-            dummy[i : (i + MAX_PATCH)] = P
+            dummy[i: (i + MAX_PATCH)] = P
     dummy = dummy.view(oT2s0, -1, opt.channels, opt.width, opt.width)
     dummy = dummy.cpu()
     if verbose:
@@ -104,7 +105,8 @@ def denoise(
         logger.info("Prediction time: {0}".format(time.time() - tstart))
 
     dummy = (
-        patch_merge(dummy, stride=stride, shape=shapex, shapeorg=shape).detach().numpy()
+        patch_merge(dummy, stride=stride, shape=shapex,
+                    shapeorg=shape).detach().numpy()
     )
 
     ds = np.array(dummy).copy()
@@ -148,8 +150,8 @@ def patch_merge(P, stride=36, shape=None, shapeorg=None):
     for i in range(S1):
         for j in range(S2):
 
-            R[:, ri : (ri + m), rj : (rj + m)] += P[i, j, :, :, :].cpu()
-            Rc[:, ri : (ri + m), rj : (rj + m)] += 1
+            R[:, ri: (ri + m), rj: (rj + m)] += P[i, j, :, :, :].cpu()
+            Rc[:, ri: (ri + m), rj: (rj + m)] += 1
             rj += stride
             c += 1
         ri += stride
@@ -171,7 +173,8 @@ def main_eva(
     args=None,
     logger=None,
 ):
-    gtv = GTV(width=36, cuda=cuda, opt=opt)  # just initialize to load the trained model, no need to change
+    # just initialize to load the trained model, no need to change
+    gtv = GTV(width=36, cuda=cuda, opt=opt)
     PATH = model_name
     device = torch.device("cuda") if cuda else torch.device("cpu")
     gtv.load_state_dict(torch.load(PATH, map_location=device))
@@ -224,15 +227,18 @@ def main_eva(
         img1 = cv2.imread(inp)[:, :, : opt.channels]
         img2 = cv2.imread(argref)[:, :, : opt.channels]
         (score, diff) = compare_ssim(img1, img2, full=True, multichannel=True)
-        logger.info("Original {0:.2f} {1:.2f}".format(cv2.PSNR(img1, img2), score))
+        logger.info("Original {0:.2f} {1:.2f}".format(
+            cv2.PSNR(img1, img2), score))
     logger.info("========================")
     # logger.info("MEAN PSNR: {:.2f}".format(np.mean(traineva["psnr"])))
     logger.info("MEAN SSIM: {:.3f}".format(np.mean(traineva["ssim"])))
     # logger.info("MEAN SSIM2 (patch-based SSIM): {:.2f}".format(np.mean(traineva["ssim2"])))
     logger.info(
-        "MEAN PSNR2 (image-based PSNR): {:.2f}".format(np.mean(traineva["psnr2"]))
+        "MEAN PSNR2 (image-based PSNR): {:.2f}".format(
+            np.mean(traineva["psnr2"]))
     )
-    logger.info("MEAN MSE (image-based MSE): {:.2f}".format(np.mean(traineva["mse"])))
+    logger.info(
+        "MEAN MSE (image-based MSE): {:.2f}".format(np.mean(traineva["mse"])))
     logger.info("========================")
 
     logger.info("EVALUATING TEST SET")
@@ -274,15 +280,18 @@ def main_eva(
         img1 = cv2.imread(inp)[:, :, : opt.channels]
         img2 = cv2.imread(argref)[:, :, : opt.channels]
         (score, diff) = compare_ssim(img1, img2, full=True, multichannel=True)
-        logger.info("Original {0:.2f} {1:.2f}".format(cv2.PSNR(img1, img2), score))
+        logger.info("Original {0:.2f} {1:.2f}".format(
+            cv2.PSNR(img1, img2), score))
     logger.info("========================")
     # logger.info("MEAN PSNR: {:.2f}".format(np.mean(testeva["psnr"])))
     logger.info("MEAN SSIM: {:.3f}".format(np.mean(testeva["ssim"])))
     # logger.info("MEAN SSIM2 (patch-based SSIM): {:.2f}".format(np.mean(testeva["ssim2"])))
     logger.info(
-        "MEAN PSNR2 (image-based PSNR): {:.2f}".format(np.mean(testeva["psnr2"]))
+        "MEAN PSNR2 (image-based PSNR): {:.2f}".format(
+            np.mean(testeva["psnr2"]))
     )
-    logger.info("MEAN MSE (image-based MSE): {:.2f}".format(np.mean(testeva["mse"])))
+    logger.info(
+        "MEAN MSE (image-based MSE): {:.2f}".format(np.mean(testeva["mse"])))
     logger.info("========================")
     return traineva, testeva
 
@@ -343,4 +352,3 @@ if __name__ == "__main__":
         args=args,
         logger=logger,
     )
-
