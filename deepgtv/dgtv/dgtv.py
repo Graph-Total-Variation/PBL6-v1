@@ -58,15 +58,15 @@ class cnnu(nn.Module):
     def __init__(self, u_min=1e-3, opt=None):
         super(cnnu, self).__init__()
         self.layer = nn.Sequential(
-            nn.Conv2d(opt.channels, 32, kernel_size=3, stride=2, padding=1),
+            nn.Conv2d(opt.channels, 32, kernel_size=1, stride=2, padding=1),
             nn.LeakyReLU(0.05),
-            nn.Conv2d(32, 32, kernel_size=3, stride=1, padding=1),
-            nn.LeakyReLU(0.05),
-            nn.MaxPool2d(kernel_size=2, stride=2, ceil_mode=True),
-            nn.Conv2d(32, 32, kernel_size=3, stride=1, padding=1),
+            nn.Conv2d(32, 32, kernel_size=1, stride=1, padding=1),
             nn.LeakyReLU(0.05),
             nn.MaxPool2d(kernel_size=2, stride=2, ceil_mode=True),
-            nn.Conv2d(32, 32, kernel_size=3, stride=1, padding=1),
+            nn.Conv2d(32, 32, kernel_size=1, stride=1, padding=1),
+            nn.LeakyReLU(0.05),
+            nn.MaxPool2d(kernel_size=2, stride=2, ceil_mode=True),
+            nn.Conv2d(32, 32, kernel_size=1, stride=1, padding=1),
             nn.LeakyReLU(0.05),
             nn.MaxPool2d(kernel_size=2, stride=2, ceil_mode=True),
         )
