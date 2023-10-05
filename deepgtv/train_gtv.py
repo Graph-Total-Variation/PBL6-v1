@@ -99,7 +99,9 @@ def main(
     for epoch in range(total_epoch):  # loop over the dataset multiple times
         # running_loss_inside = 0.0
         running_loss = 0.0
-        print(f"so luong epoch{0}",epoch)
+        opt.logger.info(
+                        "\tEpoch: {0:.5f}".format(epoch)
+                    )
         for i, data in enumerate(dataloader, 0):  # start index at 0
             # get the inputs; data is a list of [inputs, labels]
             inputs = data["nimg"][:, : opt.channels, :, :].float().type(dtype)
