@@ -407,16 +407,16 @@ class GTV(nn.Module):
         W = self.base_W.clone()
         Z = W.clone()
         W[:, :, self.opt.connectivity_idx[0], self.opt.connectivity_idx[1]] = w.view(
-            xf.shape[0], 3, -1
+            xf.shape[0], 1, -1
         )
         W[:, :, self.opt.connectivity_idx[1], self.opt.connectivity_idx[0]] = w.view(
-            xf.shape[0], 3, -1
+            xf.shape[0], 1, -1
         )
         Z[:, :, self.opt.connectivity_idx[0], self.opt.connectivity_idx[1]] = torch.abs(
-            z.view(xf.shape[0], 3, -1)
+            z.view(xf.shape[0], 1, -1)
         )
         Z[:, :, self.opt.connectivity_idx[1], self.opt.connectivity_idx[0]] = torch.abs(
-            z.view(xf.shape[0], 3, -1)
+            z.view(xf.shape[0], 1, -1)
         )
         Z = torch.max(Z, self.support_zmax)
         L = W / Z
@@ -437,16 +437,16 @@ class GTV(nn.Module):
             Z = W.clone()
             W[
                 :, :, self.opt.connectivity_idx[0], self.opt.connectivity_idx[1]
-            ] = w.view(xf.shape[0], 3, -1)
+            ] = w.view(xf.shape[0], 1, -1)
             W[
                 :, :, self.opt.connectivity_idx[1], self.opt.connectivity_idx[0]
-            ] = w.view(xf.shape[0], 3, -1)
+            ] = w.view(xf.shape[0], 1, -1)
             Z[
                 :, :, self.opt.connectivity_idx[0], self.opt.connectivity_idx[1]
-            ] = torch.abs(z.view(xf.shape[0], 3, -1))
+            ] = torch.abs(z.view(xf.shape[0], 1, -1))
             Z[
                 :, :, self.opt.connectivity_idx[1], self.opt.connectivity_idx[0]
-            ] = torch.abs(z.view(xf.shape[0], 3, -1))
+            ] = torch.abs(z.view(xf.shape[0], 1, -1))
             Z = torch.max(Z, self.support_zmax)
             L = W / Z
             L1 = L @ self.support_L
@@ -547,16 +547,16 @@ class GTV(nn.Module):
         W = self.base_W.clone()
         Z = W.clone()
         W[:, :, self.opt.connectivity_idx[0], self.opt.connectivity_idx[1]] = w.view(
-            xf.shape[0], 3, -1
+            xf.shape[0], 1, -1
         )
         W[:, :, self.opt.connectivity_idx[1], self.opt.connectivity_idx[0]] = w.view(
-            xf.shape[0], 3, -1
+            xf.shape[0], 1, -1
         )
         Z[:, :, self.opt.connectivity_idx[0], self.opt.connectivity_idx[1]] = torch.abs(
-            z.view(xf.shape[0], 3, -1)
+            z.view(xf.shape[0], 1, -1)
         )
         Z[:, :, self.opt.connectivity_idx[1], self.opt.connectivity_idx[0]] = torch.abs(
-            z.view(xf.shape[0], 3, -1)
+            z.view(xf.shape[0], 1, -1)
         )
         Z = torch.max(Z, self.support_zmax)
         L = W / Z
@@ -594,16 +594,16 @@ class GTV(nn.Module):
             Z = W.clone()
             W[
                 :, :, self.opt.connectivity_idx[0], self.opt.connectivity_idx[1]
-            ] = w.view(xf.shape[0], 3, -1)
+            ] = w.view(xf.shape[0], 1, -1)
             W[
                 :, :, self.opt.connectivity_idx[1], self.opt.connectivity_idx[0]
-            ] = w.view(xf.shape[0], 3, -1)
+            ] = w.view(xf.shape[0], 1, -1)
             Z[
                 :, :, self.opt.connectivity_idx[0], self.opt.connectivity_idx[1]
-            ] = torch.abs(z.view(xf.shape[0], 3, -1))
+            ] = torch.abs(z.view(xf.shape[0], 1, -1))
             Z[
                 :, :, self.opt.connectivity_idx[1], self.opt.connectivity_idx[0]
-            ] = torch.abs(z.view(xf.shape[0], 3, -1))
+            ] = torch.abs(z.view(xf.shape[0], 1, -1))
             Z = torch.max(Z, self.support_zmax)
             L = W / Z
             if manual_debug:
