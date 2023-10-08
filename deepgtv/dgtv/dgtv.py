@@ -831,6 +831,7 @@ def patch_splitting(dataset, output_dst, patch_size=36, stride=18):
             .unfold(3, patch_size, stride)
             .reshape(1, 1, -1, patch_size, patch_size)
             .squeeze()
+            .unsqueeze(1)
         )
         T2 = (
             s["rimg"]
@@ -838,6 +839,7 @@ def patch_splitting(dataset, output_dst, patch_size=36, stride=18):
             .unfold(3, patch_size, stride)
             .reshape(1, 1, -1, patch_size, patch_size)
             .squeeze()
+            .unsqueeze(1)
         )
         print(i_batch, dataset.nimg_name[i_batch], T1.shape)
         img_name = dataset.nimg_name[i_batch].split(".")[0]
