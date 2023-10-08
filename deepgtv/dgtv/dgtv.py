@@ -883,7 +883,7 @@ def patch_splitting(dataset, output_dst, patch_size=36, stride=18):
             
             # Assuming you want to save grayscale images
             plt.imsave(
-                os.path.join(output_dst_noisy, "{0}_{1}.{2}".format(img_name, i, img_ext)),
+                os.path.join(output_dst_ref, "{0}_{1}.{2}".format(img_name, i, img_ext)),
                 img,
                 cmap='gray'  # Specify colormap for grayscale images
             )
