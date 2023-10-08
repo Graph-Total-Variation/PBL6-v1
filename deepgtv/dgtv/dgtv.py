@@ -866,7 +866,7 @@ def patch_splitting(dataset, output_dst, patch_size=36, stride=18):
             img = T1[i, :, :].cpu().detach().numpy().astype(np.uint8)
             
             # Add a channel dimension at the beginning
-            img = np.expand_dims(img, axis=2)
+            #img = np.expand_dims(img, axis=2)
             print(img.shape)
             # Assuming you want to save grayscale images
             plt.imsave(
@@ -880,7 +880,7 @@ def patch_splitting(dataset, output_dst, patch_size=36, stride=18):
             img = T2[i, :, :].cpu().detach().numpy().astype(np.uint8)
             
             # Add a channel dimension at the beginning
-            img = np.expand_dims(img, axis=2)
+            #img = np.expand_dims(img, axis=2)
             
             # Assuming you want to save grayscale images
             plt.imsave(
