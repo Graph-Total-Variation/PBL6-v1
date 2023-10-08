@@ -136,7 +136,7 @@ def main(
                 else:
                     opt.logger.info(
                         "\tCNNF stats: {0:.5f}".format(
-                            gtv.cnnf.layer1[0].weight.grad.mean().item()
+                            gtv.cnnf.layer[0].weight.grad.mean().item()
                         )
                     )
                 opt.logger.info(

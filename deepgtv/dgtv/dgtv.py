@@ -887,8 +887,6 @@ def patch_splitting(dataset, output_dst, patch_size=36, stride=18):
                 img,
                 cmap='gray'  # Specify colormap for grayscale images
             )
-            
-            total += 1
 
     print("total: ", total)
 
