@@ -49,12 +49,12 @@ def main(
     patch_splitting(
         dataset=dataset, output_dst="tmp", patch_size=args.width, stride=args.width / 2
     )
-    dataset = RENOIR_Dataset(
-        img_dir=os.path.join("tmp", "patches"),
-        transform=transforms.Compose(
-            [standardize(normalize=False), ToTensor()]),
-        subset=subset,
-    )
+    # dataset = RENOIR_Dataset(
+    #     img_dir=os.path.join("tmp", "patches"),
+    #     transform=transforms.Compose(
+    #         [standardize(normalize=False), ToTensor()]),
+    #     subset=subset,
+    # )
 
     dataloader = DataLoader(
         dataset,
@@ -101,10 +101,16 @@ def main(
     for epoch in range(total_epoch):  # loop over the dataset multiple times
         # running_loss_inside = 0.0
         running_loss = 0.0
+        opt.logger.info(
+                        # "\tEpoch: {0:.5f}".format(epoch)
+                        "\tEpoch: {0}".format(epoch)
+                    )
         for i, data in enumerate(dataloader, 0):  # start index at 0
             # get the inputs; data is a list of [inputs, labels]
             inputs = data["nimg"][:, : opt.channels, :, :].float().type(dtype)
+            opt.logger.info(inputs.shape)
             labels = data["rimg"][:, : opt.channels, :, :].float().type(dtype)
+            opt.logger.info(labels.shape)
             # zero the parameter gradients
             optimizer.zero_grad()
             # forward + backward + optimize
@@ -233,7 +239,8 @@ if __name__ == "__main__":
 
     parser.add_argument("-m", "--model", default="GTV.pkl")
     parser.add_argument("-c", "--cont")
-    parser.add_argument("--batch", default=64)
+    # parser.add_argument("--batch", default=64)
+    parser.add_argument("--batch", default=32)
     parser.add_argument("--lr", default=8e-6, type=float)
     parser.add_argument("--epoch", default=200)
     parser.add_argument("--umax", default=1000, type=float)

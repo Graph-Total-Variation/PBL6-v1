@@ -245,6 +245,6 @@ if __name__ == "__main__":
         model_name=args.model,
         cont=args.cont,
         epoch=int(args.epoch),
-        subset=["1", "3", "5", "7", "9"],
+        subset=["1", "2", "3", "4"],
     )
 
