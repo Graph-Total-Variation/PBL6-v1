@@ -105,9 +105,7 @@ def main(
         for i, data in enumerate(dataloader, 0):  # start index at 0
             # get the inputs; data is a list of [inputs, labels]
             inputs = data["nimg"][:, : opt.channels, :, :].float().type(dtype)
-            opt.logger.info(inputs.shape)
             labels = data["rimg"][:, : opt.channels, :, :].float().type(dtype)
-            opt.logger.info(labels.shape)
             # zero the parameter gradients
             optimizer.zero_grad()
             # forward + backward + optimize
