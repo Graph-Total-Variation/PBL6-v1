@@ -5,7 +5,6 @@ import numpy as np
 import os
 import cv2
 import torch.nn as nn
-import torch.nn.functional as F
 
 from torchvision.utils import save_image
 from torch.utils.data import Dataset, DataLoader
@@ -24,19 +23,19 @@ class cnnf_2(nn.Module):
     def __init__(self, opt):
         super(cnnf_2, self).__init__()
         self.layer = nn.Sequential(
-            nn.Conv2d(opt.channels, 32, kernel_size=1, stride=1, padding=1),
+            nn.Conv2d(opt.channels, 32, kernel_size=3, stride=1, padding=1),
             nn.ReLU(),
-            nn.Conv2d(32, 32, kernel_size=1, stride=1, padding=1),
+            nn.Conv2d(32, 32, kernel_size=3, stride=1, padding=1),
             nn.ReLU(),
-            nn.Conv2d(32, 32, kernel_size=1, stride=1, padding=1),
+            nn.Conv2d(32, 32, kernel_size=3, stride=1, padding=1),
             nn.ReLU(),
-            nn.Conv2d(32, 32, kernel_size=1, stride=1, padding=1),
+            nn.Conv2d(32, 32, kernel_size=3, stride=1, padding=1),
             nn.ReLU(),
-            nn.Conv2d(32, 32, kernel_size=1, stride=1, padding=1),
+            nn.Conv2d(32, 32, kernel_size=3, stride=1, padding=1),
             nn.ReLU(),
-            nn.Conv2d(32, 32, kernel_size=1, stride=1, padding=1),
+            nn.Conv2d(32, 32, kernel_size=3, stride=1, padding=1),
             nn.ReLU(),
-            nn.Conv2d(32, 6, kernel_size=1, stride=1, padding=1),
+            nn.Conv2d(32, 6, kernel_size=3, stride=1, padding=1),
         )
 
     def forward(self, x):
@@ -58,15 +57,15 @@ class cnnu(nn.Module):
     def __init__(self, u_min=1e-3, opt=None):
         super(cnnu, self).__init__()
         self.layer = nn.Sequential(
-            nn.Conv2d(opt.channels, 32, kernel_size=1, stride=2, padding=1),
+            nn.Conv2d(opt.channels, 32, kernel_size=3, stride=2, padding=1),
             nn.LeakyReLU(0.05),
-            nn.Conv2d(32, 32, kernel_size=1, stride=1, padding=1),
-            nn.LeakyReLU(0.05),
-            nn.MaxPool2d(kernel_size=2, stride=2, ceil_mode=True),
-            nn.Conv2d(32, 32, kernel_size=1, stride=1, padding=1),
+            nn.Conv2d(32, 32, kernel_size=3, stride=1, padding=1),
             nn.LeakyReLU(0.05),
             nn.MaxPool2d(kernel_size=2, stride=2, ceil_mode=True),
-            nn.Conv2d(32, 32, kernel_size=1, stride=1, padding=1),
+            nn.Conv2d(32, 32, kernel_size=3, stride=1, padding=1),
+            nn.LeakyReLU(0.05),
+            nn.MaxPool2d(kernel_size=2, stride=2, ceil_mode=True),
+            nn.Conv2d(32, 32, kernel_size=3, stride=1, padding=1),
             nn.LeakyReLU(0.05),
             nn.MaxPool2d(kernel_size=2, stride=2, ceil_mode=True),
         )
@@ -167,7 +166,7 @@ class RENOIR_Dataset(Dataset):
 
 
 class standardize(object):
-    """Convert opencv BGR to RGB order. Scale the image with a ratio"""
+    """Convert opencv BGR to gray order. Scale the image with a ratio"""
 
     def __init__(self, scale=None, w=None, normalize=None):
         """
@@ -191,8 +190,8 @@ class standardize(object):
         if self.normalize:
             nimg = cv2.resize(nimg, (0, 0), fx=1, fy=1)
             rimg = cv2.resize(rimg, (0, 0), fx=1, fy=1)
-        nimg = cv2.cvtColor(nimg, cv2.COLOR_BGR2RGB)
-        rimg = cv2.cvtColor(rimg, cv2.COLOR_BGR2RGB)
+        nimg = cv2.cvtColor(nimg, cv2.COLOR_BGR2GRAY)
+        rimg = cv2.cvtColor(rimg, cv2.COLOR_BGR2GRAY)
         if self.normalize:
             nimg = nimg / 255.0
             rimg = rimg / 255.0

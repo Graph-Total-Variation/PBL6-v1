@@ -100,7 +100,7 @@ def main(
         # running_loss_inside = 0.0
         running_loss = 0.0
         opt.logger.info(
-                        "\tEpoch: {0:.5f}".format(epoch)
+                        "\tEpoch: {0}".format(epoch)
                     )
         for i, data in enumerate(dataloader, 0):  # start index at 0
             # get the inputs; data is a list of [inputs, labels]
