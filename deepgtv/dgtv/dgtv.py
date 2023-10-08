@@ -193,7 +193,7 @@ class standardize(object):
         nimg = cv2.cvtColor(nimg, cv2.COLOR_BGR2GRAY)
         nimg = np.expand_dims(nimg, axis=2)
         rimg = cv2.cvtColor(rimg, cv2.COLOR_BGR2GRAY)
-        rimg = np.expand_dims(rimg, axis=2)
+        rimg = np.expand_dims(nimg, axis=2)
         if self.normalize:
             nimg = nimg / 255.0
             rimg = rimg / 255.0
@@ -829,21 +829,21 @@ def patch_splitting(dataset, output_dst, patch_size=36, stride=18):
             s["nimg"]
             .unfold(2, patch_size, stride)
             .unfold(3, patch_size, stride)
-            .reshape(1, 1, -1, patch_size, patch_size)
+            .reshape(-1, patch_size, patch_size)
             .squeeze()
         )
         T2 = (
             s["rimg"]
             .unfold(2, patch_size, stride)
             .unfold(3, patch_size, stride)
-            .reshape(1, 1, -1, patch_size, patch_size)
+            .reshape(-1, patch_size, patch_size)
             .squeeze()
         )
         print(i_batch, dataset.nimg_name[i_batch], T1.shape)
         img_name = dataset.nimg_name[i_batch].split(".")[0]
         img_ext = dataset.nimg_name[i_batch].split(".")[1]
         for i in range(T1.shape[1]):
-            img = T1[:, i, :, :].cpu().detach().numpy().astype(np.uint8)
+            img = T1[i, :, :].cpu().detach().numpy().astype(np.uint8)
             img = img.transpose(1, 2, 0)
             plt.imsave(
                 os.path.join(
