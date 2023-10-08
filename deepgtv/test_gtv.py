@@ -46,8 +46,8 @@ def denoise(
     sample = sample.transpose((2, 0, 1))
     shape = sample.shape
 
-    if normalize:
-        sample = _norm(sample, newmin=0, newmax=1)
+    # if normalize:
+    #     sample = _norm(sample, newmin=0, newmax=1)
     sample = torch.from_numpy(sample)
 
     cuda = True if torch.cuda.is_available() else False
@@ -64,8 +64,8 @@ def denoise(
         tref = ref.copy()
         ref = ref.transpose((2, 0, 1))
         ref = torch.from_numpy(ref)
-        if normalize:
-            ref = _norm(ref, newmin=0, newmax=1)
+        # if normalize:
+        #     ref = _norm(ref, newmin=0, newmax=1)
 
     tstart = time.time()
     T1 = sample
