@@ -24,19 +24,19 @@ class cnnf_2(nn.Module):
     def __init__(self, opt):
         super(cnnf_2, self).__init__()
         self.layer = nn.Sequential(
-            nn.Conv2d(opt.channels, 32, kernel_size=3, stride=1, padding=1),
+            nn.Conv2d(opt.channels, 32, kernel_size=1, stride=1, padding=1),
             nn.ReLU(),
-            nn.Conv2d(32, 32, kernel_size=3, stride=1, padding=1),
+            nn.Conv2d(32, 32, kernel_size=1, stride=1, padding=1),
             nn.ReLU(),
-            nn.Conv2d(32, 32, kernel_size=3, stride=1, padding=1),
+            nn.Conv2d(32, 32, kernel_size=1, stride=1, padding=1),
             nn.ReLU(),
-            nn.Conv2d(32, 32, kernel_size=3, stride=1, padding=1),
+            nn.Conv2d(32, 32, kernel_size=1, stride=1, padding=1),
             nn.ReLU(),
-            nn.Conv2d(32, 32, kernel_size=3, stride=1, padding=1),
+            nn.Conv2d(32, 32, kernel_size=1, stride=1, padding=1),
             nn.ReLU(),
-            nn.Conv2d(32, 32, kernel_size=3, stride=1, padding=1),
+            nn.Conv2d(32, 32, kernel_size=1, stride=1, padding=1),
             nn.ReLU(),
-            nn.Conv2d(32, 6, kernel_size=3, stride=1, padding=1),
+            nn.Conv2d(32, 6, kernel_size=1, stride=1, padding=1),
         )
 
     def forward(self, x):
@@ -61,7 +61,18 @@ class cnnu(nn.Module):
     def __init__(self, u_min=1e-3, opt=None):
         super(cnnu, self).__init__()
         self.layer = nn.Sequential(
-            nn.Conv2d(opt.channels, 32, kernel_size=3, stride=2, padding=1),
+            # nn.Conv2d(opt.channels, 32, kernel_size=3, stride=2, padding=1),
+            # nn.LeakyReLU(0.05),
+            # nn.Conv2d(32, 32, kernel_size=3, stride=1, padding=1),
+            # nn.LeakyReLU(0.05),
+            # nn.MaxPool2d(kernel_size=2, stride=2, ceil_mode=True),
+            # nn.Conv2d(32, 32, kernel_size=3, stride=1, padding=1),
+            # nn.LeakyReLU(0.05),
+            # nn.MaxPool2d(kernel_size=2, stride=2, ceil_mode=True),
+            # nn.Conv2d(32, 32, kernel_size=3, stride=1, padding=1),
+            # nn.LeakyReLU(0.05),
+            # nn.MaxPool2d(kernel_size=2, stride=2, ceil_mode=True),
+            nn.Conv2d(opt.channels, 32, kernel_size=2, stride=2, padding=1),
             nn.LeakyReLU(0.05),
             nn.Conv2d(32, 32, kernel_size=3, stride=1, padding=1),
             nn.LeakyReLU(0.05),
@@ -171,7 +182,8 @@ class RENOIR_Dataset(Dataset):
 
 
 class standardize(object):
-    """Convert opencv BGR to RGB order. Scale the image with a ratio"""
+    # """Convert opencv BGR to RGB order. Scale the image with a ratio"""
+    """Convert opencv BGR to gray order. Scale the image with a ratio"""
 
     def __init__(self, scale=None, w=None, normalize=None):
         """
@@ -195,8 +207,12 @@ class standardize(object):
         if self.normalize:
             nimg = cv2.resize(nimg, (0, 0), fx=1, fy=1)
             rimg = cv2.resize(rimg, (0, 0), fx=1, fy=1)
-        nimg = cv2.cvtColor(nimg, cv2.COLOR_BGR2RGB)
-        rimg = cv2.cvtColor(rimg, cv2.COLOR_BGR2RGB)
+        # nimg = cv2.cvtColor(nimg, cv2.COLOR_BGR2RGB)
+        # rimg = cv2.cvtColor(rimg, cv2.COLOR_BGR2RGB)
+        nimg = cv2.cvtColor(nimg, cv2.COLOR_BGR2GRAY)
+        nimg = np.expand_dims(nimg, axis=2)
+        rimg = cv2.cvtColor(rimg, cv2.COLOR_BGR2GRAY)
+        rimg = np.expand_dims(rimg, axis=2)
         if self.normalize:
             nimg = nimg / 255.0
             rimg = rimg / 255.0
@@ -374,7 +390,8 @@ class GTV(nn.Module):
             self.opt.width ** 2,
             self.opt.width ** 2,
         ).type(self.dtype)
-        self.lanczos_order = 100
+        # self.lanczos_order = 100
+        self.lanczos_order = 20
         self.support_e1 = torch.zeros(self.lanczos_order, 1).type(self.dtype)
         self.support_e1[0] = 1
         self.weight_sigma = 0.01
