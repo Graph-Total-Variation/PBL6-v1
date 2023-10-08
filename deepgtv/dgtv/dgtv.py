@@ -191,7 +191,9 @@ class standardize(object):
             nimg = cv2.resize(nimg, (0, 0), fx=1, fy=1)
             rimg = cv2.resize(rimg, (0, 0), fx=1, fy=1)
         nimg = cv2.cvtColor(nimg, cv2.COLOR_BGR2GRAY)
+        nimg = np.expand_dims(nimg, axis=2)
         rimg = cv2.cvtColor(rimg, cv2.COLOR_BGR2GRAY)
+        rimg = np.expand_dims(rimg, axis=2)
         if self.normalize:
             nimg = nimg / 255.0
             rimg = rimg / 255.0
