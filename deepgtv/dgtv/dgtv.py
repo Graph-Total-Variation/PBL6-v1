@@ -867,7 +867,6 @@ def patch_splitting(dataset, output_dst, patch_size=36, stride=18):
             
             # Add a channel dimension at the beginning
             #img = np.expand_dims(img, axis=2)
-            print(img.shape)
             # Assuming you want to save grayscale images
             plt.imsave(
                 os.path.join(output_dst_noisy, "{0}_{1}.{2}".format(img_name, i, img_ext)),
