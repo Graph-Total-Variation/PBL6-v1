@@ -845,7 +845,7 @@ def patch_splitting(dataset, output_dst, patch_size=36, stride=18):
         img_name = dataset.nimg_name[i_batch].split(".")[0]
         img_ext = dataset.nimg_name[i_batch].split(".")[1]
         for i in range(T1.shape[1]):
-            img = T1[i, :, :].cpu().detach().numpy().astype(np.uint8)
+            img = T1[:, i, :, :].cpu().detach().numpy().astype(np.uint8)
             img = img.transpose(1, 2, 0)
             plt.imsave(
                 os.path.join(
