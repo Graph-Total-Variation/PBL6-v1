@@ -829,14 +829,14 @@ def patch_splitting(dataset, output_dst, patch_size=36, stride=18):
             s["nimg"]
             .unfold(2, patch_size, stride)
             .unfold(3, patch_size, stride)
-            .reshape(1, 3, -1, patch_size, patch_size)
+            .reshape(1, 1, -1, patch_size, patch_size)
             .squeeze()
         )
         T2 = (
             s["rimg"]
             .unfold(2, patch_size, stride)
             .unfold(3, patch_size, stride)
-            .reshape(1, 3, -1, patch_size, patch_size)
+            .reshape(1, 1, -1, patch_size, patch_size)
             .squeeze()
         )
         print(i_batch, dataset.nimg_name[i_batch], T1.shape)
