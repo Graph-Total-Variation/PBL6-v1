@@ -831,7 +831,6 @@ def patch_splitting(dataset, output_dst, patch_size=36, stride=18):
             .unfold(3, patch_size, stride)
             .reshape(1, 1, -1, patch_size, patch_size)
             .squeeze()
-            .unsqueeze(0)
         )
         T2 = (
             s["rimg"]
@@ -839,30 +838,59 @@ def patch_splitting(dataset, output_dst, patch_size=36, stride=18):
             .unfold(3, patch_size, stride)
             .reshape(1, 1, -1, patch_size, patch_size)
             .squeeze()
-            .unsqueeze(0)
         )
         print(i_batch, dataset.nimg_name[i_batch], T1.shape)
         img_name = dataset.nimg_name[i_batch].split(".")[0]
         img_ext = dataset.nimg_name[i_batch].split(".")[1]
-        for i in range(T1.shape[1]):
-            img = T1[:, i, :, :].cpu().detach().numpy().astype(np.uint8)
-            img = img.transpose(1, 2, 0)
+        # for i in range(T1.shape[1]):
+        #     img = T1[:, i, :, :].cpu().detach().numpy().astype(np.uint8)
+        #     img = img.transpose(1, 2, 0)
+        #     plt.imsave(
+        #         os.path.join(
+        #             output_dst_noisy, "{0}_{1}.{2}".format(img_name, i, img_ext)
+        #         ),
+        #         img,
+        #     )
+        #     total += 1
+        # for i in range(T2.shape[1]):
+        #     img = T2[:, i, :, :].cpu().detach().numpy().astype(np.uint8)
+        #     img = img.transpose(1, 2, 0)
+        #     plt.imsave(
+        #         os.path.join(
+        #             output_dst_ref, "{0}_{1}.{2}".format(img_name, i, img_ext)
+        #         ),
+        #         img,
+        #     )
+        # Assuming gray_images is your tensor with shape [729, 36, 36]
+        for i in range(T1.shape[0]):
+            img = T1[i, :, :].cpu().detach().numpy().astype(np.uint8)
+            
+            # Add a channel dimension at the beginning
+            img = np.expand_dims(img, axis=2)
+            
+            # Assuming you want to save grayscale images
             plt.imsave(
-                os.path.join(
-                    output_dst_noisy, "{0}_{1}.{2}".format(img_name, i, img_ext)
-                ),
+                os.path.join(output_dst_noisy, "{0}_{1}.{2}".format(img_name, i, img_ext)),
                 img,
+                cmap='gray'  # Specify colormap for grayscale images
             )
+            
             total += 1
-        for i in range(T2.shape[1]):
-            img = T2[:, i, :, :].cpu().detach().numpy().astype(np.uint8)
-            img = img.transpose(1, 2, 0)
+        for i in range(T2.shape[0]):
+            img = T2[i, :, :].cpu().detach().numpy().astype(np.uint8)
+            
+            # Add a channel dimension at the beginning
+            img = np.expand_dims(img, axis=2)
+            
+            # Assuming you want to save grayscale images
             plt.imsave(
-                os.path.join(
-                    output_dst_ref, "{0}_{1}.{2}".format(img_name, i, img_ext)
-                ),
+                os.path.join(output_dst_noisy, "{0}_{1}.{2}".format(img_name, i, img_ext)),
                 img,
+                cmap='gray'  # Specify colormap for grayscale images
             )
+            
+            total += 1
+
     print("total: ", total)
 
 
