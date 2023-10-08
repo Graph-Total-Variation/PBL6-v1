@@ -102,7 +102,6 @@ def main(
         opt.logger.info(
                         "\tEpoch: {0}".format(epoch)
                     )
-        opt.logger.info(dataloader.shape)
         for i, data in enumerate(dataloader, 0):  # start index at 0
             # get the inputs; data is a list of [inputs, labels]
             inputs = data["nimg"][:, : opt.channels, :, :].float().type(dtype)
