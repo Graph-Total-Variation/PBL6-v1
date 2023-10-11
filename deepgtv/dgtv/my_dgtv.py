@@ -5,7 +5,6 @@ import numpy as np
 import os
 import cv2
 import torch.nn as nn
-import torch.nn.functional as F
 
 from torchvision.utils import save_image
 from torch.utils.data import Dataset, DataLoader
@@ -24,19 +23,19 @@ class cnnf_2(nn.Module):
     def __init__(self, opt):
         super(cnnf_2, self).__init__()
         self.layer = nn.Sequential(
-            nn.Conv2d(opt.channels, 32, kernel_size=1, stride=1, padding=1),
+            nn.Conv2d(opt.channels, 32, kernel_size=3, stride=1, padding=1),
             nn.ReLU(),
-            nn.Conv2d(32, 32, kernel_size=1, stride=1, padding=1),
+            nn.Conv2d(32, 32, kernel_size=3, stride=1, padding=1),
             nn.ReLU(),
-            nn.Conv2d(32, 32, kernel_size=1, stride=1, padding=1),
+            nn.Conv2d(32, 32, kernel_size=3, stride=1, padding=1),
             nn.ReLU(),
-            nn.Conv2d(32, 32, kernel_size=1, stride=1, padding=1),
+            nn.Conv2d(32, 32, kernel_size=3, stride=1, padding=1),
             nn.ReLU(),
-            nn.Conv2d(32, 32, kernel_size=1, stride=1, padding=1),
+            nn.Conv2d(32, 32, kernel_size=3, stride=1, padding=1),
             nn.ReLU(),
-            nn.Conv2d(32, 32, kernel_size=1, stride=1, padding=1),
+            nn.Conv2d(32, 32, kernel_size=3, stride=1, padding=1),
             nn.ReLU(),
-            nn.Conv2d(32, 6, kernel_size=1, stride=1, padding=1),
+            nn.Conv2d(32, 6, kernel_size=3, stride=1, padding=1),
         )
 
     def forward(self, x):
@@ -61,18 +60,7 @@ class cnnu(nn.Module):
     def __init__(self, u_min=1e-3, opt=None):
         super(cnnu, self).__init__()
         self.layer = nn.Sequential(
-            # nn.Conv2d(opt.channels, 32, kernel_size=3, stride=2, padding=1),
-            # nn.LeakyReLU(0.05),
-            # nn.Conv2d(32, 32, kernel_size=3, stride=1, padding=1),
-            # nn.LeakyReLU(0.05),
-            # nn.MaxPool2d(kernel_size=2, stride=2, ceil_mode=True),
-            # nn.Conv2d(32, 32, kernel_size=3, stride=1, padding=1),
-            # nn.LeakyReLU(0.05),
-            # nn.MaxPool2d(kernel_size=2, stride=2, ceil_mode=True),
-            # nn.Conv2d(32, 32, kernel_size=3, stride=1, padding=1),
-            # nn.LeakyReLU(0.05),
-            # nn.MaxPool2d(kernel_size=2, stride=2, ceil_mode=True),
-            nn.Conv2d(opt.channels, 32, kernel_size=2, stride=2, padding=1),
+            nn.Conv2d(opt.channels, 32, kernel_size=3, stride=2, padding=1),
             nn.LeakyReLU(0.05),
             nn.Conv2d(32, 32, kernel_size=3, stride=1, padding=1),
             nn.LeakyReLU(0.05),
@@ -182,7 +170,6 @@ class RENOIR_Dataset(Dataset):
 
 
 class standardize(object):
-    # """Convert opencv BGR to RGB order. Scale the image with a ratio"""
     """Convert opencv BGR to gray order. Scale the image with a ratio"""
 
     def __init__(self, scale=None, w=None, normalize=None):
@@ -213,7 +200,6 @@ class standardize(object):
         nimg = np.expand_dims(nimg, axis=2)
         rimg = cv2.cvtColor(rimg, cv2.COLOR_BGR2GRAY)
         rimg = np.expand_dims(rimg, axis=2)
-
         if self.normalize:
             nimg = nimg / 255.0
             rimg = rimg / 255.0
@@ -391,8 +377,7 @@ class GTV(nn.Module):
             self.opt.width ** 2,
             self.opt.width ** 2,
         ).type(self.dtype)
-        # self.lanczos_order = 100
-        self.lanczos_order = 20
+        self.lanczos_order = 100
         self.support_e1 = torch.zeros(self.lanczos_order, 1).type(self.dtype)
         self.support_e1[0] = 1
         self.weight_sigma = 0.01
@@ -431,16 +416,16 @@ class GTV(nn.Module):
         W = self.base_W.clone()
         Z = W.clone()
         W[:, :, self.opt.connectivity_idx[0], self.opt.connectivity_idx[1]] = w.view(
-            xf.shape[0], 3, -1
+            xf.shape[0], 1, -1
         )
         W[:, :, self.opt.connectivity_idx[1], self.opt.connectivity_idx[0]] = w.view(
-            xf.shape[0], 3, -1
+            xf.shape[0], 1, -1
         )
         Z[:, :, self.opt.connectivity_idx[0], self.opt.connectivity_idx[1]] = torch.abs(
-            z.view(xf.shape[0], 3, -1)
+            z.view(xf.shape[0], 1, -1)
         )
         Z[:, :, self.opt.connectivity_idx[1], self.opt.connectivity_idx[0]] = torch.abs(
-            z.view(xf.shape[0], 3, -1)
+            z.view(xf.shape[0], 1, -1)
         )
         Z = torch.max(Z, self.support_zmax)
         L = W / Z
@@ -461,16 +446,16 @@ class GTV(nn.Module):
             Z = W.clone()
             W[
                 :, :, self.opt.connectivity_idx[0], self.opt.connectivity_idx[1]
-            ] = w.view(xf.shape[0], 3, -1)
+            ] = w.view(xf.shape[0], 1, -1)
             W[
                 :, :, self.opt.connectivity_idx[1], self.opt.connectivity_idx[0]
-            ] = w.view(xf.shape[0], 3, -1)
+            ] = w.view(xf.shape[0], 1, -1)
             Z[
                 :, :, self.opt.connectivity_idx[0], self.opt.connectivity_idx[1]
-            ] = torch.abs(z.view(xf.shape[0], 3, -1))
+            ] = torch.abs(z.view(xf.shape[0], 1, -1))
             Z[
                 :, :, self.opt.connectivity_idx[1], self.opt.connectivity_idx[0]
-            ] = torch.abs(z.view(xf.shape[0], 3, -1))
+            ] = torch.abs(z.view(xf.shape[0], 1, -1))
             Z = torch.max(Z, self.support_zmax)
             L = W / Z
             L1 = L @ self.support_L
@@ -574,16 +559,16 @@ class GTV(nn.Module):
         W = self.base_W.clone()
         Z = W.clone()
         W[:, :, self.opt.connectivity_idx[0], self.opt.connectivity_idx[1]] = w.view(
-            xf.shape[0], 3, -1
+            xf.shape[0], 1, -1
         )
         W[:, :, self.opt.connectivity_idx[1], self.opt.connectivity_idx[0]] = w.view(
-            xf.shape[0], 3, -1
+            xf.shape[0], 1, -1
         )
         Z[:, :, self.opt.connectivity_idx[0], self.opt.connectivity_idx[1]] = torch.abs(
-            z.view(xf.shape[0], 3, -1)
+            z.view(xf.shape[0], 1, -1)
         )
         Z[:, :, self.opt.connectivity_idx[1], self.opt.connectivity_idx[0]] = torch.abs(
-            z.view(xf.shape[0], 3, -1)
+            z.view(xf.shape[0], 1, -1)
         )
         Z = torch.max(Z, self.support_zmax)
         L = W / Z
@@ -621,16 +606,16 @@ class GTV(nn.Module):
             Z = W.clone()
             W[
                 :, :, self.opt.connectivity_idx[0], self.opt.connectivity_idx[1]
-            ] = w.view(xf.shape[0], 3, -1)
+            ] = w.view(xf.shape[0], 1, -1)
             W[
                 :, :, self.opt.connectivity_idx[1], self.opt.connectivity_idx[0]
-            ] = w.view(xf.shape[0], 3, -1)
+            ] = w.view(xf.shape[0], 1, -1)
             Z[
                 :, :, self.opt.connectivity_idx[0], self.opt.connectivity_idx[1]
-            ] = torch.abs(z.view(xf.shape[0], 3, -1))
+            ] = torch.abs(z.view(xf.shape[0], 1, -1))
             Z[
                 :, :, self.opt.connectivity_idx[1], self.opt.connectivity_idx[0]
-            ] = torch.abs(z.view(xf.shape[0], 3, -1))
+            ] = torch.abs(z.view(xf.shape[0], 1, -1))
             Z = torch.max(Z, self.support_zmax)
             L = W / Z
             if manual_debug:
@@ -815,7 +800,6 @@ def supporting_matrix(opt):
     for e, p in enumerate(A_pair):
         H[e, p[0]] = 1
         H[e, p[1]] = -1
-        # A = F.relu(A - 1e-10)
         A[p[0], p[1]] = 1
 
     opt.I = I
@@ -825,8 +809,6 @@ def supporting_matrix(opt):
     opt.connectivity_idx = torch.where(A > 0)
 
     for e, p in enumerate(A_pair):
-        # A = F.relu(A - 1e-10)
-        # A[p[1], p[0]] = 1
         A_temp = A.clone()
         A_temp[p[1], p[0]] = 1
         A = A_temp
@@ -869,7 +851,6 @@ def patch_splitting(dataset, output_dst, patch_size=36, stride=18):
             .unfold(2, patch_size, stride)
             .unfold(3, patch_size, stride)
             .reshape(1, 1, -1, patch_size, patch_size)
-            # reshape(1, -1, patch_size, patch_size)
             .squeeze()
         )
         T2 = (
@@ -877,20 +858,17 @@ def patch_splitting(dataset, output_dst, patch_size=36, stride=18):
             .unfold(2, patch_size, stride)
             .unfold(3, patch_size, stride)
             .reshape(1, 1, -1, patch_size, patch_size)
-            # reshape(1, -1, patch_size, patch_size)
             .squeeze()
         )
         print(i_batch, dataset.nimg_name[i_batch], T1.shape)
         img_name = dataset.nimg_name[i_batch].split(".")[0]
         img_ext = dataset.nimg_name[i_batch].split(".")[1]
         # for i in range(T1.shape[1]):
-        #     # img = T1[:, i, :, :].cpu().detach().numpy().astype(np.uint8)
-        #     img = T1[i, :, :].cpu().detach().numpy().astype(np.uint8)
+        #     img = T1[:, i, :, :].cpu().detach().numpy().astype(np.uint8)
         #     img = img.transpose(1, 2, 0)
         #     plt.imsave(
         #         os.path.join(
-        #             output_dst_noisy, "{0}_{1}.{2}".format(
-        #                 img_name, i, img_ext)
+        #             output_dst_noisy, "{0}_{1}.{2}".format(img_name, i, img_ext)
         #         ),
         #         img,
         #     )
@@ -904,7 +882,7 @@ def patch_splitting(dataset, output_dst, patch_size=36, stride=18):
         #         ),
         #         img,
         #     )
-
+        # Assuming gray_images is your tensor with shape [729, 36, 36]
         for i in range(T1.shape[0]):
             img = T1[i, :, :].cpu().detach().numpy().astype(np.uint8)
 

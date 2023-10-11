@@ -32,31 +32,32 @@ def main(seed, model_name, cont=None, optim_name=None, subset=None, epoch=100):
     SAVEDIR = "".join(PATH.split(".")[:-1]) + "_"
     batch_size = opt.batch_size
 
-    # if not subset:
-    #     _subset = ["10", "1", "7", "8", "9"]
-    #         _subset = ["1", "3", "5", "7", "9"]
-    #     opt.logger.info("Train: {0}".format(_subset))
-    #     subset = [i + "_" for i in _subset]
+#    if not subset:
+#        _subset = ["10", "1", "7", "8", "9"]
+    # _subset = ["1", "3", "5", "7", "9"]
+#        opt.logger.info("Train: {0}".format(_subset))
+#        subset = [i + "_" for i in _subset]
     if subset:
         subset = [i + "_" for i in subset]
 
-    dataset = RENOIR_Dataset(
-        img_dir=os.path.join(opt.train),
-        transform=transforms.Compose([standardize(normalize=False), ToTensor()]),
-        subset=None,
-    )
-    opt.logger.info("Splitting patches...")
-    patch_splitting(
-        dataset=dataset, output_dst="tmp", patch_size=args.width, stride=args.width / 2
-    )
-    img_dir=os.path.join(opt.train)
-    print(img_dir)
     # dataset = RENOIR_Dataset(
-    #     # img_dir=os.path.join("tmp", "patches"),
     #     img_dir=os.path.join(opt.train),
     #     transform=transforms.Compose([standardize(normalize=False), ToTensor()]),
-    #     subset=subset,
+    #     subset=None,
     # )
+    # opt.logger.info("Splitting patches...")
+    # patch_splitting(
+    #     dataset=dataset, output_dst="tmp", patch_size=args.width, stride=args.width / 2
+    # )
+    img_dir = os.path.join(opt.train)
+    print(img_dir)
+    dataset = RENOIR_Dataset(
+        # img_dir=os.path.join("tmp", "patches"),
+        img_dir=os.path.join(opt.train),
+        transform=transforms.Compose(
+            [standardize(normalize=False), ToTensor()]),
+        subset=subset,
+    )
     opt.logger.info(dataset.nimg_name[0])
 
     dataloader = DataLoader(
@@ -96,7 +97,8 @@ def main(seed, model_name, cont=None, optim_name=None, subset=None, epoch=100):
     if cont:
         try:
             optimizer.load_state_dict(torch.load(cont + "optim"))
-            opt.logger.info("LOAD PREVIOUS OPTIMIZER: {0}".format(cont + "optim"))
+            opt.logger.info(
+                "LOAD PREVIOUS OPTIMIZER: {0}".format(cont + "optim"))
         except Exception:
             opt.logger.info("Using new optimizer")
 
@@ -108,10 +110,6 @@ def main(seed, model_name, cont=None, optim_name=None, subset=None, epoch=100):
     ld = 1
     for epoch in range(total_epoch):  # loop over the dataset multiple times
         running_loss = 0.0
-        opt.logger.info(
-                        # "\tEpoch: {0:.5f}".format(epoch)
-                        "\tEpoch: {0}".format(epoch)
-                    )
         for i, data in enumerate(dataloader, 0):  # start index at 0
             # get the inputs; data is a list of [inputs, labels]
             inputs = data["nimg"][:, : opt.channels, :, :].float().type(dtype)
@@ -129,10 +127,11 @@ def main(seed, model_name, cont=None, optim_name=None, subset=None, epoch=100):
             optimizer.step()
             running_loss += loss.item()
 
-            if epoch == 0 and (i + 1) % 80 == 0 and args.first: # for the first epoch, print every 80-th patch if 'first' flag is set
+            # for the first epoch, print every 80-th patch if 'first' flag is set
+            if epoch == 0 and (i + 1) % 80 == 0 and args.first:
                 g = gtv.gtv1
                 with torch.no_grad():
-                    P1, P2  = gtv(inputs, debug=True)
+                    P1, P2 = gtv(inputs, debug=True)
                     opt.logger.info(
                         "\tLOSS: {0:.8f} {1:.8f} ".format(
                             (P1 - labels).square().mean().item(),
@@ -141,17 +140,18 @@ def main(seed, model_name, cont=None, optim_name=None, subset=None, epoch=100):
                     )
                     P1 = g(inputs, debug=1)
                 opt.logger.info(
-                        "\tCNNF grads: {0:.5f}".format(
-                            g.cnnf.layer[0].weight.grad.median().item()
-                        )
+                    "\tCNNF grads: {0:.5f}".format(
+                        g.cnnf.layer[0].weight.grad.median().item()
                     )
+                )
                 with torch.no_grad():
                     P2 = g(P1, debug=1)
 
         tnow = time.time()
         opt.logger.info(
             "[{0}] \x1b[31mLOSS\x1b[0m: {1:.8f}, time elapsed: {2:.1f} secs, epoch time: {3:.1f} secs".format(
-                epoch + 1, running_loss / (ld * (i + 1)), tnow - tstart, tnow - tprev
+                epoch + 1, running_loss /
+                (ld * (i + 1)), tnow - tstart, tnow - tprev
             )
         )
         tprev = tnow
@@ -169,10 +169,10 @@ def main(seed, model_name, cont=None, optim_name=None, subset=None, epoch=100):
 
                 _ = g(inputs, debug=1)
             opt.logger.info(
-                    "\tCNNF grads: {0:.5f}".format(
-                        g.cnnf.layer[0].weight.grad.median().item()
-                    )
+                "\tCNNF grads: {0:.5f}".format(
+                    g.cnnf.layer[0].weight.grad.median().item()
                 )
+            )
             with torch.no_grad():
                 P2 = g(P1, debug=1)
 
@@ -185,13 +185,15 @@ def main(seed, model_name, cont=None, optim_name=None, subset=None, epoch=100):
         # scheduler.step()
         losshist.append(running_loss / (ld * (i + 1)))
         torch.save(gtv, SAVEDIR + str(epoch) + "." + SAVEPATH)
-    torch.save(optimizer.state_dict(), SAVEDIR + str(epoch) + "." + SAVEPATH + "optim")
+    torch.save(optimizer.state_dict(), SAVEDIR +
+               str(epoch) + "." + SAVEPATH + "optim")
 
     opt.logger.info("Total running time: {0:.3f}".format(time.time() - tstart))
 
+
 opt = OPT(
     batch_size=32,
-    channels=3,
+    channels=1,
     lr=1e-4,
     momentum=0.9,
     u_max=1000,
@@ -212,8 +214,10 @@ if __name__ == "__main__":
     parser.add_argument("--train", default="gauss_batch")
     parser.add_argument("--stack", default=None)
     parser.add_argument("--width", default=36, type=int)
-    parser.add_argument("--legacy", default=True, type=bool, help='original architecture')
-    parser.add_argument("--first", default=False, type=bool, help='print logs for the first epoch')
+    parser.add_argument("--legacy", default=True, type=bool,
+                        help='original architecture')
+    parser.add_argument("--first", default=False, type=bool,
+                        help='print logs for the first epoch')
 
     args = parser.parse_args()
     model_name = args.model
@@ -227,7 +231,8 @@ if __name__ == "__main__":
     opt.width = args.width
     torch.manual_seed(args.seed)
     logging.basicConfig(
-        filename="log/train_dgtv_{0}.log".format(time.strftime("%Y-%m-%d-%H%M")),
+        filename="log/train_dgtv_{0}.log".format(
+            time.strftime("%Y-%m-%d-%H%M")),
         filemode="a",
         format="%(asctime)s %(name)s %(levelname)s %(message)s",
         datefmt="%H:%M:%S",
@@ -245,6 +250,5 @@ if __name__ == "__main__":
         model_name=args.model,
         cont=args.cont,
         epoch=int(args.epoch),
-        subset=["1", "2", "3", "4"],
+        subset=["1", "3", "5", "7", "9"],
     )
-
