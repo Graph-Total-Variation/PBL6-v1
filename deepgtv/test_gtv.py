@@ -96,7 +96,6 @@ def denoise(
         for ii, i in enumerate(range(0, T2.shape[0], MAX_PATCH)):
             P = gtv.predict(
                 T2[i : (i + MAX_PATCH), :, :, :].float().contiguous(),
-                layers=args.layers,
             )
             dummy[i : (i + MAX_PATCH)] = P
     dummy = dummy.view(oT2s0, -1, opt.channels, opt.width, opt.width)
