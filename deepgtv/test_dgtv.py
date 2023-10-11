@@ -175,6 +175,7 @@ def main_eva(
 
     #gtv.load_state_dict(torch.load(PATH, map_location=device))
     gtv = torch.load(PATH, map_location=device)
+    gtv.cuda()
     width = gtv.opt.width
     opt.width = width
     opt=gtv.opt
