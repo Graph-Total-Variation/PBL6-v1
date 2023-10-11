@@ -113,6 +113,7 @@ def denoise(
     d = np.minimum(np.maximum(ds, 0), 255)
     logger.info("RANGE: {0} - {1}".format(d.min(), d.max()))
     d = d.transpose(1, 2, 0) / 255
+    d = d[:,:,0]
     if 0:
         opath = args.output
     else:
