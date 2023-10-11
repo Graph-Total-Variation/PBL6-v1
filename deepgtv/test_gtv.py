@@ -95,7 +95,7 @@ def denoise(
     with torch.no_grad():
         for ii, i in enumerate(range(0, T2.shape[0], MAX_PATCH)):
             P = gtv.predict(
-                T2[i : (i + MAX_PATCH), :, :, :].float().contiguous(),
+                T2[i : (i + MAX_PATCH), :, :, :].float().contiguous().type(dtype),
             )
             dummy[i : (i + MAX_PATCH)] = P
     dummy = dummy.view(oT2s0, -1, opt.channels, opt.width, opt.width)
@@ -360,3 +360,4 @@ if __name__ == "__main__":
         logger=logger,
     )
 
+#python test_gtv.py -w 512 -m model/GTV_19.pkl --stride 9 --multi 500 -p dataset/Test
