@@ -230,7 +230,7 @@ def main_eva(
         img1 = cv2.imread(inp)[:, :, : opt.channels]
         img2 = cv2.imread(argref)[:, :, : opt.channels]
         #(score, diff) = compare_ssim(img1, img2, full=True, channel_axis=True)
-        (score, diff) = compare_ssim(img1, img2, full=True)
+        (score, diff) = compare_ssim(img1[:,:,0], img2[:,:,0], full=True)
         logger.info("Original {0:.2f} {1:.2f}".format(cv2.PSNR(img1, img2), score))
     logger.info("========================")
     # logger.info("MEAN PSNR: {:.2f}".format(np.mean(traineva["psnr"])))
@@ -281,7 +281,7 @@ def main_eva(
         img1 = cv2.imread(inp)[:, :, : opt.channels]
         img2 = cv2.imread(argref)[:, :, : opt.channels]
         #(score, diff) = compare_ssim(img1, img2, full=True, channel_axis=True)
-        (score, diff) = compare_ssim(img1, img2, full=True)
+        (score, diff) = compare_ssim(img1[:,:,0], img2[:,:,0], full=True)
         logger.info("Original {0:.2f} {1:.2f}".format(cv2.PSNR(img1, img2), score))
     logger.info("========================")
     # logger.info("MEAN PSNR: {:.2f}".format(np.mean(testeva["psnr"])))
