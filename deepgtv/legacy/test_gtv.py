@@ -101,7 +101,8 @@ def denoise(
     with torch.no_grad():
         for ii, i in enumerate(range(0, T2.shape[0], MAX_PATCH)):
             P = gtv.predict(
-                T2[i: (i + MAX_PATCH), :, :, :].float().contiguous(),
+                # T2[i: (i + MAX_PATCH), :, :, :].float().contiguous(),
+                T2[i : (i + MAX_PATCH), :, :, :].float().contiguous().type(dtype),
                 # layers=args.layers,
             )
             dummy[i: (i + MAX_PATCH)] = P
@@ -139,7 +140,8 @@ def denoise(
         d = np.expand_dims(d, axis=2)
         psnr2 = cv2.PSNR(tref, d)
         logger.info("PSNR: {:.5f}".format(psnr2))
-        (score, diff) = compare_ssim(tref, d, full=True, multichannel=True)
+        # (score, diff) = compare_ssim(tref, d, full=True, multichannel=True)
+        (score, diff) = compare_ssim(tref, d, full=True, multichannel=False )
         logger.info("SSIM: {:.5f}".format(score))
     logger.info("Saved {0}".format(opath))
     if argref:
@@ -239,7 +241,8 @@ def main_eva(
 
         img1 = cv2.imread(inp)[:, :, : opt.channels]
         img2 = cv2.imread(argref)[:, :, : opt.channels]
-        (score, diff) = compare_ssim(img1, img2, full=True, multichannel=True)
+        # (score, diff) = compare_ssim(img1, img2, full=True, multichannel=True)
+        (score, diff) = compare_ssim(img1, img2, full=True, multichannel=False)
         logger.info("Original {0:.2f} {1:.2f}".format(
             cv2.PSNR(img1, img2), score))
     logger.info("========================")
@@ -294,7 +297,8 @@ def main_eva(
 
         img1 = cv2.imread(inp)[:, :, : opt.channels]
         img2 = cv2.imread(argref)[:, :, : opt.channels]
-        (score, diff) = compare_ssim(img1, img2, full=True, multichannel=True)
+        # (score, diff) = compare_ssim(img1, img2, full=True, multichannel=True)
+        (score, diff) = compare_ssim(img1, img2, full=True, multichannel=False)
         logger.info("Original {0:.2f} {1:.2f}".format(
             cv2.PSNR(img1, img2), score))
     logger.info("========================")
