@@ -69,8 +69,8 @@ def main(
     gtv = GTV(
         width=args.width,
         prox_iter=1,
-        u_max=10,
-        u_min=0.5,
+        u_max=65,
+        u_min=50,
         # lambda_min=0.5,
         # lambda_max=1e9,
         cuda=cuda,
@@ -174,7 +174,7 @@ def main(
             else:
                 opt.logger.info(
                     "\tCNNF stats: {0:.5f}".format(
-                        gtv.cnnf.layer1[0].weight.grad.mean().item()
+                        gtv.cnnf.layer[0].weight.grad.mean().item()
                     )
                 )
             opt.logger.info(

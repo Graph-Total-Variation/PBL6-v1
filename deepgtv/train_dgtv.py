@@ -187,7 +187,7 @@ def main(seed, model_name, cont=None, optim_name=None, subset=None, epoch=100):
 
 opt = OPT(
     batch_size=32,
-    channels=3,
+    channels=1,
     lr=1e-4,
     momentum=0.9,
     u_max=1000,
