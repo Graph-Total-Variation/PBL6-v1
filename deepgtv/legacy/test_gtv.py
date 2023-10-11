@@ -42,7 +42,9 @@ def denoise(
         width = sample.shape[0]
     else:
         sample = cv2.resize(sample, (width, width))
-    sample = cv2.cvtColor(sample, cv2.COLOR_BGR2RGB)
+    # sample = cv2.cvtColor(sample, cv2.COLOR_BGR2RGB)
+    sample = cv2.cvtColor(sample, cv2.COLOR_RGB2GRAY)
+    sample = np.expand_dims(sample, axis=2)
     sample = sample.transpose((2, 0, 1))
     shape = sample.shape
 
@@ -57,9 +59,15 @@ def denoise(
         ref = cv2.imread(argref)
         if ref.shape[0] != width or ref.shape[1] != width:
             ref = cv2.resize(ref, (width, width))
-        ref = cv2.cvtColor(ref, cv2.COLOR_BGR2RGB)
+        # ref = cv2.cvtColor(ref, cv2.COLOR_BGR2RGB)
+        ref = cv2.cvtColor(ref, cv2.COLOR_RGB2GRAY)
+
+        #ref = np.expand_dims(ref, axis=2)
         ref_p = resroot + "/ref_" + argref.split("/")[-1]
-        plt.imsave(ref_p, ref)
+        # plt.imsave(ref_p, ref)
+        plt.imsave(ref_p, ref,cmap='gray')
+        ref = np.expand_dims(ref, axis=2)
+
         logger.info(ref_p)
         tref = ref.copy()
         ref = ref.transpose((2, 0, 1))
@@ -94,7 +102,7 @@ def denoise(
         for ii, i in enumerate(range(0, T2.shape[0], MAX_PATCH)):
             P = gtv.predict(
                 T2[i: (i + MAX_PATCH), :, :, :].float().contiguous(),
-                layers=args.layers,
+                # layers=args.layers,
             )
             dummy[i: (i + MAX_PATCH)] = P
     dummy = dummy.view(oT2s0, -1, opt.channels, opt.width, opt.width)
@@ -120,12 +128,15 @@ def denoise(
         opath = resroot + "/{0}_{1}".format(prefix, filename)
         opath = opath[:-3] + "png"
     d = np.minimum(np.maximum(d, 0), 1)
-    plt.imsave(opath, d)
+    # plt.imsave(opath, d)
+    plt.imsave(opath, d, cmap='gray')
     if argref:
         mse = ((d - (tref / 255.0)) ** 2).mean() * 255
         logger.info("MSE: {:.5f}".format(mse))
         d = cv2.imread(opath)
-        d = cv2.cvtColor(d, cv2.COLOR_BGR2RGB)
+        # d = cv2.cvtColor(d, cv2.COLOR_BGR2RGB)
+        d = cv2.cvtColor(d, cv2.COLOR_RGB2GRAY)
+        d = np.expand_dims(d, axis=2)
         psnr2 = cv2.PSNR(tref, d)
         logger.info("PSNR: {:.5f}".format(psnr2))
         (score, diff) = compare_ssim(tref, d, full=True, multichannel=True)
@@ -200,9 +211,11 @@ def main_eva(
     stride = args.stride
     for t in trainset:
         logger.info("image #{0}".format(t))
-        inp = "{0}/noisy/{1}{2}.bmp".format(image_path, t, npref)
+        # inp = "{0}/noisy/{1}{2}.bmp".format(image_path, t, npref)
+        inp = "{0}/noisy/{1}{2}.png".format(image_path, t, npref)
         logger.info(inp)
-        argref = "{0}/ref/{1}_r.bmp".format(image_path, t)
+        # argref = "{0}/ref/{1}_r.bmp".format(image_path, t)
+        argref = "{0}/ref/{1}.png".format(image_path, t)
         _, _ssim, _, _psnr2, _mse, _ = denoise(
             inp,
             gtv,
@@ -253,9 +266,11 @@ def main_eva(
     }
     for t in testset:
         logger.info("image #{0}".format(t))
-        inp = "{0}/noisy/{1}{2}.bmp".format(image_path, t, npref)
+        # inp = "{0}/noisy/{1}{2}.bmp".format(image_path, t, npref)
+        inp = "{0}/noisy/{1}{2}.png".format(image_path, t, npref)
         logger.info(inp)
-        argref = "{0}/ref/{1}_r.bmp".format(image_path, t)
+        # argref = "{0}/ref/{1}_r.bmp".format(image_path, t)
+        argref = "{0}/ref/{1}_r.png".format(image_path, t)
         _, _ssim, _, _psnr2, _mse, _ = denoise(
             inp,
             gtv,
@@ -315,7 +330,21 @@ if __name__ == "__main__":
     parser.add_argument("-p", "--image_path")
     parser.add_argument("--layers", default=1, type=int)
     args = parser.parse_args()
-    opt = pickle.load(open(args.opt, "rb"))
+    #opt = pickle.load(open(args.opt, "rb"))
+    opt = OPT(
+    batch_size=32,
+    channels=1,
+    lr=1e-4,
+    momentum=0.9,
+    u_max=1000,
+    u_min=0.0001,
+    cuda=True if torch.cuda.is_available() else False
+    )
+    logger = logging.getLogger("root")
+    logger.addHandler(logging.StreamHandler(sys.stdout))
+    opt.logger = logger
+
+
     supporting_matrix(opt)
     if args.model:
         model_name = args.model
@@ -337,6 +366,7 @@ if __name__ == "__main__":
     logger.addHandler(logging.StreamHandler(sys.stdout))
 
     opt.logger = logger
+    opt.legacy = True
     logger.info("GTV evaluation")
     logger.info(" ".join(sys.argv))
     _, _ = main_eva(

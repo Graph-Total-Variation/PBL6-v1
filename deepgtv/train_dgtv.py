@@ -32,31 +32,31 @@ def main(seed, model_name, cont=None, optim_name=None, subset=None, epoch=100):
     SAVEDIR = "".join(PATH.split(".")[:-1]) + "_"
     batch_size = opt.batch_size
 
-#    if not subset:
-#        _subset = ["10", "1", "7", "8", "9"]
-        # _subset = ["1", "3", "5", "7", "9"]
-#        opt.logger.info("Train: {0}".format(_subset))
-#        subset = [i + "_" for i in _subset]
+    # if not subset:
+    #     _subset = ["10", "1", "7", "8", "9"]
+    #         _subset = ["1", "3", "5", "7", "9"]
+    #     opt.logger.info("Train: {0}".format(_subset))
+    #     subset = [i + "_" for i in _subset]
     if subset:
         subset = [i + "_" for i in subset]
 
-    # dataset = RENOIR_Dataset(
-    #     img_dir=os.path.join(opt.train),
-    #     transform=transforms.Compose([standardize(normalize=False), ToTensor()]),
-    #     subset=None,
-    # )
-    # opt.logger.info("Splitting patches...")
-    # patch_splitting(
-    #     dataset=dataset, output_dst="tmp", patch_size=args.width, stride=args.width / 2
-    # )
-    img_dir=os.path.join(opt.train)
-    print(img_dir)
     dataset = RENOIR_Dataset(
-        # img_dir=os.path.join("tmp", "patches"),
         img_dir=os.path.join(opt.train),
         transform=transforms.Compose([standardize(normalize=False), ToTensor()]),
-        subset=subset,
+        subset=None,
     )
+    opt.logger.info("Splitting patches...")
+    patch_splitting(
+        dataset=dataset, output_dst="tmp", patch_size=args.width, stride=args.width / 2
+    )
+    img_dir=os.path.join(opt.train)
+    print(img_dir)
+    # dataset = RENOIR_Dataset(
+    #     # img_dir=os.path.join("tmp", "patches"),
+    #     img_dir=os.path.join(opt.train),
+    #     transform=transforms.Compose([standardize(normalize=False), ToTensor()]),
+    #     subset=subset,
+    # )
     opt.logger.info(dataset.nimg_name[0])
 
     dataloader = DataLoader(
