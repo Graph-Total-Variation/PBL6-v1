@@ -129,7 +129,7 @@ def denoise(
         d = np.expand_dims(d, axis=2)
         psnr2 = cv2.PSNR(tref, d)
         logger.info("PSNR: {:.5f}".format(psnr2))
-        (score, diff) = compare_ssim(tref, d, full=True, multichannel=True)
+        (score, diff) = compare_ssim(tref, d, full=True, multichannel=False)
         logger.info("SSIM: {:.5f}".format(score))
     logger.info("Saved {0}".format(opath))
     if argref:
@@ -226,7 +226,7 @@ def main_eva(
 
         img1 = cv2.imread(inp)[:, :, : opt.channels]
         img2 = cv2.imread(argref)[:, :, : opt.channels]
-        (score, diff) = compare_ssim(img1, img2, full=True, multichannel=True)
+        (score, diff) = compare_ssim(img1, img2, full=True, multichannel=False)
         logger.info("Original {0:.2f} {1:.2f}".format(cv2.PSNR(img1, img2), score))
     logger.info("========================")
     # logger.info("MEAN PSNR: {:.2f}".format(np.mean(traineva["psnr"])))
@@ -276,7 +276,7 @@ def main_eva(
 
         img1 = cv2.imread(inp)[:, :, : opt.channels]
         img2 = cv2.imread(argref)[:, :, : opt.channels]
-        (score, diff) = compare_ssim(img1, img2, full=True, multichannel=True)
+        (score, diff) = compare_ssim(img1, img2, full=True, multichannel=False)
         logger.info("Original {0:.2f} {1:.2f}".format(cv2.PSNR(img1, img2), score))
     logger.info("========================")
     # logger.info("MEAN PSNR: {:.2f}".format(np.mean(testeva["psnr"])))
