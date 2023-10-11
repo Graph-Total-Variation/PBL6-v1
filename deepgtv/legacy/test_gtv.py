@@ -65,7 +65,7 @@ def denoise(
         #ref = np.expand_dims(ref, axis=2)
         ref_p = resroot + "/ref_" + argref.split("/")[-1]
         # plt.imsave(ref_p, ref)
-        plt.imsave(ref_p, ref,cmap='gray')
+        plt.imsave(ref_p, ref, cmap='gray')
         ref = np.expand_dims(ref, axis=2)
 
         logger.info(ref_p)
@@ -102,7 +102,8 @@ def denoise(
         for ii, i in enumerate(range(0, T2.shape[0], MAX_PATCH)):
             P = gtv.predict(
                 # T2[i: (i + MAX_PATCH), :, :, :].float().contiguous(),
-                T2[i : (i + MAX_PATCH), :, :, :].float().contiguous().type(dtype),
+                T2[i: (i + MAX_PATCH), :, :,
+                   :].float().contiguous().type(dtype),
                 # layers=args.layers,
             )
             dummy[i: (i + MAX_PATCH)] = P
@@ -122,6 +123,7 @@ def denoise(
     d = np.minimum(np.maximum(ds, 0), 255)
     logger.info("RANGE: {0} - {1}".format(d.min(), d.max()))
     d = d.transpose(1, 2, 0) / 255
+    d = d[:, :, 0]
     if 0:
         opath = args.output
     else:
@@ -141,7 +143,7 @@ def denoise(
         psnr2 = cv2.PSNR(tref, d)
         logger.info("PSNR: {:.5f}".format(psnr2))
         # (score, diff) = compare_ssim(tref, d, full=True, multichannel=True)
-        (score, diff) = compare_ssim(tref, d, full=True, multichannel=False )
+        (score, diff) = compare_ssim(tref, d, full=True, multichannel=False)
         logger.info("SSIM: {:.5f}".format(score))
     logger.info("Saved {0}".format(opath))
     if argref:
@@ -336,18 +338,17 @@ if __name__ == "__main__":
     args = parser.parse_args()
     #opt = pickle.load(open(args.opt, "rb"))
     opt = OPT(
-    batch_size=32,
-    channels=1,
-    lr=1e-4,
-    momentum=0.9,
-    u_max=1000,
-    u_min=0.0001,
-    cuda=True if torch.cuda.is_available() else False
+        batch_size=32,
+        channels=1,
+        lr=1e-4,
+        momentum=0.9,
+        u_max=1000,
+        u_min=0.0001,
+        cuda=True if torch.cuda.is_available() else False
     )
     logger = logging.getLogger("root")
     logger.addHandler(logging.StreamHandler(sys.stdout))
     opt.logger = logger
-
 
     supporting_matrix(opt)
     if args.model:
