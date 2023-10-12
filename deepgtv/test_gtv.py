@@ -170,7 +170,8 @@ def main_eva(
     testset,
     imgw=None,
     verbose=0,
-    image_path=None,
+    image_path_train=None,
+    image_path_test=None,
     noise_type="gauss",
     opt=None,
     args=None,
@@ -192,8 +193,8 @@ def main_eva(
     width = gtv.opt.width
     opt.width = width
     opt = gtv.opt
-    if not image_path:
-        image_path = "..\\all\\all\\"
+    if not image_path_train:
+        image_path_train = "..\\all\\all\\"
     if noise_type == "gauss":
         npref = "_g"
     else:
@@ -211,9 +212,9 @@ def main_eva(
     stride = args.stride
     for t in trainset:
         logger.info("image #{0}".format(t))
-        inp = "{0}/noisy/{1}{2}.png".format(image_path, t, npref)
+        inp = "{0}/noisy/{1}{2}.png".format(image_path_train, t, npref)
         logger.info(inp)
-        argref = "{0}/ref/{1}.png".format(image_path, t)
+        argref = "{0}/ref/{1}.png".format(image_path_train, t)
         _, _ssim, _, _psnr2, _mse, _ = denoise(
             inp,
             gtv,
@@ -262,9 +263,9 @@ def main_eva(
     }
     for t in testset:
         logger.info("image #{0}".format(t))
-        inp = "{0}/noisy/{1}{2}.png".format(image_path, t, npref)
+        inp = "{0}/noisy/{1}{2}.png".format(image_path_test, t, npref)
         logger.info(inp)
-        argref = "{0}/ref/{1}.png".format(image_path, t)
+        argref = "{0}/ref/{1}.png".format(image_path_test, t)
         _, _ssim, _, _psnr2, _mse, _ = denoise(
             inp,
             gtv,
@@ -327,7 +328,8 @@ if __name__ == "__main__":
         "--multi", default=30, type=int, help="# of patches evaluation in parallel"
     )
     parser.add_argument("--opt", default="opt")
-    parser.add_argument("-p", "--image_path")
+    parser.add_argument("-p", "--image_path_train")
+    parser.add_argument("-p", "--image_path_test")
     parser.add_argument("--layers", default=1, type=int)
     args = parser.parse_args()
     #opt = pickle.load(open(args.opt, "rb"))
@@ -335,10 +337,14 @@ if __name__ == "__main__":
         model_name = args.model
     else:
         model_name = "GTV_20.pkl"
-    if args.image_path:
-        image_path = args.image_path
+    if args.image_path_train:
+        image_path_train = args.image_path_train
     else:
-        image_path = "gauss"
+        image_path_train = "gauss"
+    if args.image_path_test:
+        image_path_test = args.image_path_test
+    else:
+        image_path_test = "gauss"
     logging.basicConfig(
         filename="log/test_gtv_{0}.log".format(time.strftime("%Y-%m-%d-%H%M")),
         filemode="a",
@@ -362,11 +368,12 @@ if __name__ == "__main__":
         testset=["1", "2", "3", "4"],
         imgw=args.width,
         verbose=1,
-        image_path=image_path,
+        image_path_train=image_path_train,
+        image_path_test=image_path_test,
         noise_type="gauss",
         opt=opt,
         args=args,
         logger=logger,
     )
 
-#python test_gtv.py -w 512 -m model/GTV_19.pkl --stride 9 --multi 500 -p dataset/Test
+#python test_gtv.py -w 512 -m model/GTV_19.pkl --stride 9 --multi 500 --image_path_test dataset/Test --image_path_train dataset/dataset_structure
