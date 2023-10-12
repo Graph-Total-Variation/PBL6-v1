@@ -212,7 +212,7 @@ def main_eva(
     stride = args.stride
     for t in trainset:
         logger.info("image #{0}".format(t))
-        inp = "{0}/noisy/{1}{2}.png".format(image_path_train, t, npref)
+        inp = "{0}/noisy/{1}.png".format(image_path_train, t)
         logger.info(inp)
         argref = "{0}/ref/{1}.png".format(image_path_train, t)
         _, _ssim, _, _psnr2, _mse, _ = denoise(
