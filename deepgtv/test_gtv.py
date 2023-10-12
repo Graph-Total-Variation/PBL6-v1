@@ -176,6 +176,14 @@ def main_eva(
     args=None,
     logger=None,
 ):
+    cuda = True if torch.cuda.is_available() else False
+    torch.autograd.set_detect_anomaly(True)
+    opt.logger.info("CUDA: {0}".format(cuda))
+    if cuda:
+        dtype = torch.cuda.FloatTensor
+        opt.logger.info(torch.cuda.get_device_name(0))
+    else:
+        dtype = torch.FloatTensor
     gtv = GTV(width=36, cuda=cuda, opt=opt)  # just initialize to load the trained model, no need to change
     PATH = model_name
     device = torch.device("cuda") if cuda else torch.device("cpu")
@@ -323,7 +331,6 @@ if __name__ == "__main__":
     parser.add_argument("--layers", default=1, type=int)
     args = parser.parse_args()
     #opt = pickle.load(open(args.opt, "rb"))
-    supporting_matrix(opt)
     if args.model:
         model_name = args.model
     else:
@@ -345,6 +352,7 @@ if __name__ == "__main__":
 
     opt.logger = logger
     opt.legacy = True
+    supporting_matrix(opt)
     logger.info("GTV evaluation")
     logger.info(" ".join(sys.argv))
     _, _ = main_eva(
