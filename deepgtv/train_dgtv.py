@@ -119,6 +119,7 @@ def main(seed, model_name, cont=None, optim_name=None, subset=None, epoch=100):
             # zero the parameter gradients
             optimizer.zero_grad()
             # forward + backward + optimize
+
             outputs = gtv(inputs)
             loss = criterion(outputs, labels)
             loss.backward()

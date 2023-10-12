@@ -6,7 +6,7 @@ import time
 import cv2
 import matplotlib.pyplot as plt
 import argparse
-from deepgtv.train_gtv import *
+from train_gtv import *
 import logging
 
 cuda = True if torch.cuda.is_available() else False
@@ -42,14 +42,13 @@ def denoise(
         width = sample.shape[0]
     else:
         sample = cv2.resize(sample, (width, width))
-    # sample = cv2.cvtColor(sample, cv2.COLOR_BGR2RGB)
     sample = cv2.cvtColor(sample, cv2.COLOR_RGB2GRAY)
     sample = np.expand_dims(sample, axis=2)
     sample = sample.transpose((2, 0, 1))
     shape = sample.shape
 
-    if normalize:
-        sample = _norm(sample, newmin=0, newmax=1)
+    # if normalize:
+    #     sample = _norm(sample, newmin=0, newmax=1)
     sample = torch.from_numpy(sample)
 
     cuda = True if torch.cuda.is_available() else False
@@ -59,21 +58,17 @@ def denoise(
         ref = cv2.imread(argref)
         if ref.shape[0] != width or ref.shape[1] != width:
             ref = cv2.resize(ref, (width, width))
-        # ref = cv2.cvtColor(ref, cv2.COLOR_BGR2RGB)
         ref = cv2.cvtColor(ref, cv2.COLOR_RGB2GRAY)
-
         #ref = np.expand_dims(ref, axis=2)
         ref_p = resroot + "/ref_" + argref.split("/")[-1]
-        # plt.imsave(ref_p, ref)
         plt.imsave(ref_p, ref, cmap='gray')
         ref = np.expand_dims(ref, axis=2)
-
         logger.info(ref_p)
         tref = ref.copy()
         ref = ref.transpose((2, 0, 1))
         ref = torch.from_numpy(ref)
-        if normalize:
-            ref = _norm(ref, newmin=0, newmax=1)
+        # if normalize:
+        #     ref = _norm(ref, newmin=0, newmax=1)
 
     tstart = time.time()
     T1 = sample
@@ -101,10 +96,8 @@ def denoise(
     with torch.no_grad():
         for ii, i in enumerate(range(0, T2.shape[0], MAX_PATCH)):
             P = gtv.predict(
-                # T2[i: (i + MAX_PATCH), :, :, :].float().contiguous(),
                 T2[i: (i + MAX_PATCH), :, :,
                    :].float().contiguous().type(dtype),
-                # layers=args.layers,
             )
             dummy[i: (i + MAX_PATCH)] = P
     dummy = dummy.view(oT2s0, -1, opt.channels, opt.width, opt.width)
@@ -131,19 +124,17 @@ def denoise(
         opath = resroot + "/{0}_{1}".format(prefix, filename)
         opath = opath[:-3] + "png"
     d = np.minimum(np.maximum(d, 0), 1)
-    # plt.imsave(opath, d)
     plt.imsave(opath, d, cmap='gray')
     if argref:
         mse = ((d - (tref / 255.0)) ** 2).mean() * 255
         logger.info("MSE: {:.5f}".format(mse))
         d = cv2.imread(opath)
-        # d = cv2.cvtColor(d, cv2.COLOR_BGR2RGB)
         d = cv2.cvtColor(d, cv2.COLOR_RGB2GRAY)
         d = np.expand_dims(d, axis=2)
         psnr2 = cv2.PSNR(tref, d)
         logger.info("PSNR: {:.5f}".format(psnr2))
-        # (score, diff) = compare_ssim(tref, d, full=True, multichannel=True)
-        (score, diff) = compare_ssim(tref, d, full=True, multichannel=False)
+        #(score, diff) = compare_ssim(tref, d, full=True, channel_axis=True)
+        (score, diff) = compare_ssim(tref[:, :, 0], d[:, :, 0], full=True)
         logger.info("SSIM: {:.5f}".format(score))
     logger.info("Saved {0}".format(opath))
     if argref:
@@ -188,11 +179,20 @@ def main_eva(
     args=None,
     logger=None,
 ):
+    cuda = True if torch.cuda.is_available() else False
+    torch.autograd.set_detect_anomaly(True)
+    opt.logger.info("CUDA: {0}".format(cuda))
+    if cuda:
+        dtype = torch.cuda.FloatTensor
+        opt.logger.info(torch.cuda.get_device_name(0))
+    else:
+        dtype = torch.FloatTensor
     # just initialize to load the trained model, no need to change
     gtv = GTV(width=36, cuda=cuda, opt=opt)
     PATH = model_name
     device = torch.device("cuda") if cuda else torch.device("cpu")
     gtv.load_state_dict(torch.load(PATH, map_location=device))
+    gtv.cuda()
     width = gtv.opt.width
     opt.width = width
     opt = gtv.opt
@@ -215,10 +215,8 @@ def main_eva(
     stride = args.stride
     for t in trainset:
         logger.info("image #{0}".format(t))
-        # inp = "{0}/noisy/{1}{2}.bmp".format(image_path, t, npref)
         inp = "{0}/noisy/{1}{2}.png".format(image_path, t, npref)
         logger.info(inp)
-        # argref = "{0}/ref/{1}_r.bmp".format(image_path, t)
         argref = "{0}/ref/{1}.png".format(image_path, t)
         _, _ssim, _, _psnr2, _mse, _ = denoise(
             inp,
@@ -243,8 +241,8 @@ def main_eva(
 
         img1 = cv2.imread(inp)[:, :, : opt.channels]
         img2 = cv2.imread(argref)[:, :, : opt.channels]
-        # (score, diff) = compare_ssim(img1, img2, full=True, multichannel=True)
-        (score, diff) = compare_ssim(img1, img2, full=True, multichannel=False)
+        #(score, diff) = compare_ssim(img1, img2, full=True, channel_axis=True)
+        (score, diff) = compare_ssim(img1[:, :, 0], img2[:, :, 0], full=True)
         logger.info("Original {0:.2f} {1:.2f}".format(
             cv2.PSNR(img1, img2), score))
     logger.info("========================")
@@ -271,11 +269,9 @@ def main_eva(
     }
     for t in testset:
         logger.info("image #{0}".format(t))
-        # inp = "{0}/noisy/{1}{2}.bmp".format(image_path, t, npref)
         inp = "{0}/noisy/{1}{2}.png".format(image_path, t, npref)
         logger.info(inp)
-        # argref = "{0}/ref/{1}_r.bmp".format(image_path, t)
-        argref = "{0}/ref/{1}_r.png".format(image_path, t)
+        argref = "{0}/ref/{1}.png".format(image_path, t)
         _, _ssim, _, _psnr2, _mse, _ = denoise(
             inp,
             gtv,
@@ -299,8 +295,8 @@ def main_eva(
 
         img1 = cv2.imread(inp)[:, :, : opt.channels]
         img2 = cv2.imread(argref)[:, :, : opt.channels]
-        # (score, diff) = compare_ssim(img1, img2, full=True, multichannel=True)
-        (score, diff) = compare_ssim(img1, img2, full=True, multichannel=False)
+        #(score, diff) = compare_ssim(img1, img2, full=True, channel_axis=True)
+        (score, diff) = compare_ssim(img1[:, :, 0], img2[:, :, 0], full=True)
         logger.info("Original {0:.2f} {1:.2f}".format(
             cv2.PSNR(img1, img2), score))
     logger.info("========================")
@@ -317,6 +313,15 @@ def main_eva(
     return traineva, testeva
 
 
+opt = OPT(
+    batch_size=32,
+    channels=1,
+    lr=1e-4,
+    momentum=0.9,
+    u_max=1000,
+    u_min=0.0001,
+    cuda=True if torch.cuda.is_available() else False
+)
 if __name__ == "__main__":
     # global opt
     parser = argparse.ArgumentParser()
@@ -337,20 +342,6 @@ if __name__ == "__main__":
     parser.add_argument("--layers", default=1, type=int)
     args = parser.parse_args()
     #opt = pickle.load(open(args.opt, "rb"))
-    opt = OPT(
-        batch_size=32,
-        channels=1,
-        lr=1e-4,
-        momentum=0.9,
-        u_max=1000,
-        u_min=0.0001,
-        cuda=True if torch.cuda.is_available() else False
-    )
-    logger = logging.getLogger("root")
-    logger.addHandler(logging.StreamHandler(sys.stdout))
-    opt.logger = logger
-
-    supporting_matrix(opt)
     if args.model:
         model_name = args.model
     else:
@@ -372,13 +363,14 @@ if __name__ == "__main__":
 
     opt.logger = logger
     opt.legacy = True
+    supporting_matrix(opt)
     logger.info("GTV evaluation")
     logger.info(" ".join(sys.argv))
     _, _ = main_eva(
         seed="gauss",
         model_name=model_name,
-        trainset=["1", "3", "5", "7", "9"],
-        testset=["10", "2", "4", "6", "8"],
+        trainset=["1", "2", "3", "4"],
+        testset=["1", "2", "3", "4"],
         imgw=args.width,
         verbose=1,
         image_path=image_path,
@@ -387,3 +379,5 @@ if __name__ == "__main__":
         args=args,
         logger=logger,
     )
+
+# python test_gtv.py -w 512 -m model/___  --stride 9 --multi 500 -p dataset/Test
