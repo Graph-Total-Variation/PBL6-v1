@@ -328,8 +328,8 @@ if __name__ == "__main__":
         "--multi", default=30, type=int, help="# of patches evaluation in parallel"
     )
     parser.add_argument("--opt", default="opt")
-    parser.add_argument("-p", "--image_path_train")
-    parser.add_argument("-p", "--image_path_test")
+    parser.add_argument("--image_path_train")
+    parser.add_argument("--image_path_test")
     parser.add_argument("--layers", default=1, type=int)
     args = parser.parse_args()
     #opt = pickle.load(open(args.opt, "rb"))
