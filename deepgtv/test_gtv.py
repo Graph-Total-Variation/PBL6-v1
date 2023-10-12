@@ -376,4 +376,4 @@ if __name__ == "__main__":
         logger=logger,
     )
 
-#python test_gtv.py -w 512 -m model/GTV_19.pkl --stride 9 --multi 500 --image_path_test dataset/Test --image_path_train dataset/dataset_structure
+#python test_gtv.py -w 512 -m model/GTV_19.pkl --stride 9 --multi 200 --image_path_test dataset/Test --image_path_train dataset/dataset_structure
