@@ -294,7 +294,15 @@ def main_eva(
     logger.info("========================")
     return traineva, testeva
 
-
+opt = OPT(
+    batch_size=32,
+    channels=1,
+    lr=1e-4,
+    momentum=0.9,
+    u_max=1000,
+    u_min=0.0001,
+    cuda=True if torch.cuda.is_available() else False
+    )
 if __name__ == "__main__":
     # global opt
     parser = argparse.ArgumentParser()
@@ -315,18 +323,6 @@ if __name__ == "__main__":
     parser.add_argument("--layers", default=1, type=int)
     args = parser.parse_args()
     #opt = pickle.load(open(args.opt, "rb"))
-    opt = OPT(
-    batch_size=32,
-    channels=1,
-    lr=1e-4,
-    momentum=0.9,
-    u_max=1000,
-    u_min=0.0001,
-    cuda=True if torch.cuda.is_available() else False
-    )
-    logger = logging.getLogger("root")
-    logger.addHandler(logging.StreamHandler(sys.stdout))
-    opt.logger = logger
     supporting_matrix(opt)
     if args.model:
         model_name = args.model

@@ -76,6 +76,7 @@ def main(
         cuda=cuda,
         opt=opt,
     )
+    
     if cont:
         gtv.load_state_dict(torch.load(cont))
         opt.logger.info("LOAD PREVIOUS GTV:", cont)
