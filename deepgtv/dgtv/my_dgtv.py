@@ -331,6 +331,7 @@ class OPT:
         )
 
 
+# khám phá
 class GTV(nn.Module):
     """
     GTV network
@@ -777,6 +778,8 @@ class DeepGTV(nn.Module):
             P2 = self.gtv1(P1)
             return P1, P2
         return P
+
+# áp dụng KNN
 
 
 def supporting_matrix(opt):

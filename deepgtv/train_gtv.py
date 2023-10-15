@@ -8,7 +8,7 @@ from torch.utils.data import DataLoader
 import torchvision.transforms as transforms
 import torch.optim as optim
 import matplotlib.pyplot as plt
-from dgtv.my_dgtv import *
+from dgtv.dgtv import *
 import pickle
 import logging
 import sys
@@ -78,6 +78,7 @@ def main(
         cuda=cuda,
         opt=opt,
     )
+
     if cont:
         gtv.load_state_dict(torch.load(cont))
         opt.logger.info("LOAD PREVIOUS GTV:", cont)
