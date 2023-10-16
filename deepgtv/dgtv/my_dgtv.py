@@ -407,7 +407,12 @@ class GTV(nn.Module):
             ** 2
         )
 
-        w = torch.exp(-(Fs.sum(axis=1)) / (s ** 2))
+        # w = torch.exp(-(Fs.sum(axis=1)) / (s ** 2))
+        if s != 0:
+            w = torch.exp(-((Fs.sum(axis=1))**2) / (s ** 2))
+        else:
+            w = 0
+
         if debug:
             s = f"Sample WEIGHT SUM: {w[0, :, :].sum().item():.4f} || Mean Processed u: {u.mean().item():.4f}"
             self.logger.info(s)
@@ -539,7 +544,12 @@ class GTV(nn.Module):
                 E.view(E.shape[0], E.shape[1], self.opt.width ** 2, 1))
             ** 2
         )
-        w = torch.exp(-(Fs.sum(axis=1)) / (self.weight_sigma ** 2))
+
+        if self.weight_sigma:
+            w = torch.exp(-((Fs.sum(axis=1))**2) / (self.weight_sigma ** 2))
+        else:
+            w = 0
+        # w = torch.exp(-(Fs.sum(axis=1)) / (self.weight_sigma ** 2))
 
         if manual_debug:
             # return_dict['gtv'].append((z*w).abs().sum())
