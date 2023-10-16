@@ -216,8 +216,8 @@ def main_eva(
     width = gtv.opt.width
     opt.width = width
     opt = gtv.opt
-    if not image_path_train:
-        image_path_train = "..\\all\\all\\"
+    # if not image_path_train:
+    #     image_path_train = "..\\all\\all\\"
     if noise_type == "gauss":
         npref = "_g"
     else:
@@ -244,7 +244,7 @@ def main_eva(
                 inp,
                 gtv,
                 argref,
-                stride=stride,
+                stride=args.stride,
                 width=imgw,
                 prefix=seed,
                 opt=opt,
@@ -272,11 +272,22 @@ def main_eva(
         img4 = np.array(cv2.imread(img_ref_p)[:, :, : opt.channels])
         difference = np.abs(img4 - img3)
         # Plot the solid line chart for the difference
+        logging.getLogger('matplotlib.font_manager').setLevel(logging.ERROR)
+        fig, axes  = plt.subplots(2,2, figsize=(8,8))
+        axes[0,0].imshow(img3,cmap='gray')
+        axes[0,0].set_title('denoise')
+
+        axes[0,1].imshow(img4,cmap='gray')
+        axes[0,1].set_title('grouth truth')
+        
+        plt.subplot(2, 2)
         plt.plot(difference.ravel(), color='black')
         plt.title('Pixel-wise Difference between Ground Truth and Denoised Image')
         plt.xlabel('Pixel Index')
         plt.ylabel('Absolute Pixel Difference')
         plt.grid()
+        axes[1, 1].axis('off')
+        plt.tight_layout()
         plt.show()
     if image_path_train:
         logger.info("EVALUATING TRAIN SET")
