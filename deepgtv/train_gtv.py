@@ -8,7 +8,7 @@ from torch.utils.data import DataLoader
 import torchvision.transforms as transforms
 import torch.optim as optim
 import matplotlib.pyplot as plt
-from dgtv.dgtv import *
+from dgtv.my_dgtv import *
 import pickle
 import logging
 import sys
