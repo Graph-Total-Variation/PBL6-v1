@@ -194,8 +194,6 @@ class standardize(object):
         if self.normalize:
             nimg = cv2.resize(nimg, (0, 0), fx=1, fy=1)
             rimg = cv2.resize(rimg, (0, 0), fx=1, fy=1)
-        # nimg = cv2.cvtColor(nimg, cv2.COLOR_BGR2RGB)
-        # rimg = cv2.cvtColor(rimg, cv2.COLOR_BGR2RGB)
         nimg = cv2.cvtColor(nimg, cv2.COLOR_BGR2GRAY)
         nimg = np.expand_dims(nimg, axis=2)
         rimg = cv2.cvtColor(rimg, cv2.COLOR_BGR2GRAY)
@@ -331,7 +329,6 @@ class OPT:
         )
 
 
-# khám phá
 class GTV(nn.Module):
     """
     GTV network
@@ -407,12 +404,11 @@ class GTV(nn.Module):
             ** 2
         )
 
-        w = torch.exp(-(Fs.sum(axis=1)) / (s ** 2))
-        # if s != 0:
-        #     w = torch.exp(-((Fs.sum(axis=1))**2) / (s ** 2))
-        # else:
-        #     w = 0
-
+        # w = torch.exp(-(Fs.sum(axis=1)) / (s ** 2))
+        if s:
+            w = torch.exp(-((Fs.sum(axis=1))**2) / (s ** 2))
+        else:
+            w = 0
         if debug:
             s = f"Sample WEIGHT SUM: {w[0, :, :].sum().item():.4f} || Mean Processed u: {u.mean().item():.4f}"
             self.logger.info(s)
@@ -544,12 +540,11 @@ class GTV(nn.Module):
                 E.view(E.shape[0], E.shape[1], self.opt.width ** 2, 1))
             ** 2
         )
-
-        # if self.weight_sigma:
-        #     w = torch.exp(-((Fs.sum(axis=1))**2) / (self.weight_sigma ** 2))
-        # else:
-        #     w = 0
-        w = torch.exp(-(Fs.sum(axis=1)) / (self.weight_sigma ** 2))
+        if self.weight_sigma:
+            w = torch.exp(-((Fs.sum(axis=1))**2) / (self.weight_sigma ** 2))
+        else:
+            w = 0
+        # w = torch.exp(-(Fs.sum(axis=1)) / (self.weight_sigma ** 2))
 
         if manual_debug:
             # return_dict['gtv'].append((z*w).abs().sum())
@@ -788,8 +783,6 @@ class DeepGTV(nn.Module):
             P2 = self.gtv1(P1)
             return P1, P2
         return P
-
-# áp dụng KNN
 
 
 def supporting_matrix(opt):
