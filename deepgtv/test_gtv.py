@@ -17,7 +17,29 @@ else:
 
 resroot = "result"
 
+def get_args():
+    parser = argparse.ArgumentParser()
 
+    parser.add_argument(
+        "-w",
+        "--width",
+        help="Resize image to a square image with given width",
+        type=int,
+    )
+    parser.add_argument("-m", "--model")
+    parser.add_argument("--stride", default=18, type=int)
+    parser.add_argument(
+        "--multi", default=30, type=int, help="# of patches evaluation in parallel"
+    )
+    parser.add_argument("--opt", default="opt")
+    parser.add_argument("--image_path_train")
+    parser.add_argument("--image_path_test")
+    parser.add_argument("--image_path")
+    parser.add_argument("--layers", default=1, type=int)
+    
+    args = parser.parse_args()
+    return args
+    
 def denoise(
     inp,
     gtv,
@@ -172,6 +194,7 @@ def main_eva(
     verbose=0,
     image_path_train=None,
     image_path_test=None,
+    image_path = None,
     noise_type="gauss",
     opt=None,
     args=None,
@@ -199,38 +222,40 @@ def main_eva(
         npref = "_g"
     else:
         npref = "_n"
-
-    logger.info("EVALUATING TRAIN SET")
-    # trainset = ["10", "1", "7", "8", "9"]
-    traineva = {
-        "psnr": list(),
-        "ssim": list(),
-        "ssim2": list(),
-        "psnr2": list(),
-        "mse": list(),
-    }
-    stride = args.stride
-    for t in trainset:
-        logger.info("image #{0}".format(t))
-        inp = "{0}/noisy/{1}.png".format(image_path_train, t)
-        logger.info(inp)
-        argref = "{0}/ref/{1}.png".format(image_path_train, t)
+    if image_path:
+        logger.info("EVALUATING IMAGE")
+        traineva = {
+            "psnr": float(),
+            "ssim": float(),
+            "ssim2": float(),
+            "psnr2": float(),
+            "mse": float(),
+        }
+        testeva = {
+            "psnr": float(),
+            "ssim": float(),
+            "ssim2": float(),
+            "psnr2": float(),
+            "mse": float(),
+        }
+        inp = "{0}/noisy.png".format(image_path)
+        argref = "{0}/ref.png".format(image_path)
         _, _ssim, _, _psnr2, _mse, _ = denoise(
-            inp,
-            gtv,
-            argref,
-            stride=stride,
-            width=imgw,
-            prefix=seed,
-            opt=opt,
-            args=args,
-            logger=logger,
+                inp,
+                gtv,
+                argref,
+                stride=stride,
+                width=imgw,
+                prefix=seed,
+                opt=opt,
+                args=args,
+                logger=logger,
         )
         # traineva["psnr"].append(_psnr)
-        traineva["ssim"].append(_ssim)
+        traineva["ssim"] = _ssim
         # traineva["ssim2"].append(_ssim2)
-        traineva["psnr2"].append(_psnr2)
-        traineva["mse"].append(_mse)
+        traineva["psnr2"] = _psnr2
+        traineva["mse"] = _mse
         try:
             from skimage.metrics import structural_similarity as compare_ssim
         except Exception:
@@ -241,66 +266,134 @@ def main_eva(
         #(score, diff) = compare_ssim(img1, img2, full=True, channel_axis=True)
         (score, diff) = compare_ssim(img1[:,:,0], img2[:,:,0], full=True)
         logger.info("Original {0:.2f} {1:.2f}".format(cv2.PSNR(img1, img2), score))
-    logger.info("========================")
-    # logger.info("MEAN PSNR: {:.2f}".format(np.mean(traineva["psnr"])))
-    logger.info("MEAN SSIM: {:.3f}".format(np.mean(traineva["ssim"])))
-    # logger.info("MEAN SSIM2 (patch-based SSIM): {:.2f}".format(np.mean(traineva["ssim2"])))
-    logger.info(
-        "MEAN PSNR2 (image-based PSNR): {:.2f}".format(np.mean(traineva["psnr2"]))
-    )
-    logger.info("MEAN MSE (image-based MSE): {:.2f}".format(np.mean(traineva["mse"])))
-    logger.info("========================")
+        img_noise_p =  "result/gauss_noisy.png"
+        img_ref_p =   "result/ref_ref.png"
+        img3 = np.array(cv2.imread(img_noise_p)[:, :, : opt.channels])
+        img4 = np.array(cv2.imread(img_ref_p)[:, :, : opt.channels])
+        difference = np.abs(img4 - img3)
+        # Plot the solid line chart for the difference
+        plt.plot(difference.ravel(), color='black')
+        plt.title('Pixel-wise Difference between Ground Truth and Denoised Image')
+        plt.xlabel('Pixel Index')
+        plt.ylabel('Absolute Pixel Difference')
+        plt.grid()
+        plt.show()
+    if image_path_train:
+        logger.info("EVALUATING TRAIN SET")
+        # trainset = ["10", "1", "7", "8", "9"]
+        traineva = {
+            "psnr": list(),
+            "ssim": list(),
+            "ssim2": list(),
+            "psnr2": list(),
+            "mse": list(),
+        }
+        testeva = {
+            "psnr": list(),
+            "ssim": list(),
+            "ssim2": list(),
+            "psnr2": list(),
+            "mse": list(),
+        }
+        stride = args.stride
+        for t in trainset:
+            logger.info("image #{0}".format(t))
+            inp = "{0}/noisy/{1}.png".format(image_path_train, t)
+            logger.info(inp)
+            argref = "{0}/ref/{1}.png".format(image_path_train, t)
+            _, _ssim, _, _psnr2, _mse, _ = denoise(
+                inp,
+                gtv,
+                argref,
+                stride=stride,
+                width=imgw,
+                prefix=seed,
+                opt=opt,
+                args=args,
+                logger=logger,
+            )
+            # traineva["psnr"].append(_psnr)
+            traineva["ssim"].append(_ssim)
+            # traineva["ssim2"].append(_ssim2)
+            traineva["psnr2"].append(_psnr2)
+            traineva["mse"].append(_mse)
+            try:
+                from skimage.metrics import structural_similarity as compare_ssim
+            except Exception:
+                from skimage.measure import compare_ssim
 
-    logger.info("EVALUATING TEST SET")
-
-    # testset = ["2", "3", "4", "5", "6"]
-    testeva = {
-        "psnr": list(),
-        "ssim": list(),
-        "ssim2": list(),
-        "psnr2": list(),
-        "mse": list(),
-    }
-    for t in testset:
-        logger.info("image #{0}".format(t))
-        inp = "{0}/noisy/{1}{2}.png".format(image_path_test, t, npref)
-        logger.info(inp)
-        argref = "{0}/ref/{1}.png".format(image_path_test, t)
-        _, _ssim, _, _psnr2, _mse, _ = denoise(
-            inp,
-            gtv,
-            argref,
-            stride=stride,
-            width=imgw,
-            prefix=seed,
-            opt=opt,
-            args=args,
-            logger=logger,
+            img1 = cv2.imread(inp)[:, :, : opt.channels]
+            img2 = cv2.imread(argref)[:, :, : opt.channels]
+            #(score, diff) = compare_ssim(img1, img2, full=True, channel_axis=True)
+            (score, diff) = compare_ssim(img1[:,:,0], img2[:,:,0], full=True)
+            logger.info("Original {0:.2f} {1:.2f}".format(cv2.PSNR(img1, img2), score))
+        logger.info("========================")
+        # logger.info("MEAN PSNR: {:.2f}".format(np.mean(traineva["psnr"])))
+        logger.info("MEAN SSIM: {:.3f}".format(np.mean(traineva["ssim"])))
+        # logger.info("MEAN SSIM2 (patch-based SSIM): {:.2f}".format(np.mean(traineva["ssim2"])))
+        logger.info(
+            "MEAN PSNR2 (image-based PSNR): {:.2f}".format(np.mean(traineva["psnr2"]))
         )
-        # testeva["psnr"].append(_psnr)
-        testeva["ssim"].append(_ssim)
-        # testeva["ssim2"].append(_ssim2)
-        testeva["psnr2"].append(_psnr2)
-        testeva["mse"].append(_mse)
-        try:
-            from skimage.metrics import structural_similarity as compare_ssim
-        except Exception:
-            from skimage.measure import compare_ssim
+        logger.info("MEAN MSE (image-based MSE): {:.2f}".format(np.mean(traineva["mse"])))
+        logger.info("========================")
 
-        img1 = cv2.imread(inp)[:, :, : opt.channels]
-        img2 = cv2.imread(argref)[:, :, : opt.channels]
-        #(score, diff) = compare_ssim(img1, img2, full=True, channel_axis=True)
-        (score, diff) = compare_ssim(img1[:,:,0], img2[:,:,0], full=True)
-        logger.info("Original {0:.2f} {1:.2f}".format(cv2.PSNR(img1, img2), score))
-    logger.info("========================")
-    # logger.info("MEAN PSNR: {:.2f}".format(np.mean(testeva["psnr"])))
-    logger.info("MEAN SSIM: {:.3f}".format(np.mean(testeva["ssim"])))
-    # logger.info("MEAN SSIM2 (patch-based SSIM): {:.2f}".format(np.mean(testeva["ssim2"])))
-    logger.info(
-        "MEAN PSNR2 (image-based PSNR): {:.2f}".format(np.mean(testeva["psnr2"]))
-    )
-    logger.info("MEAN MSE (image-based MSE): {:.2f}".format(np.mean(testeva["mse"])))
-    logger.info("========================")
+    if image_path_test:
+        logger.info("EVALUATING TEST SET")
+        traineva = {
+            "psnr": list(),
+            "ssim": list(),
+            "ssim2": list(),
+            "psnr2": list(),
+            "mse": list(),
+        }
+        testeva = {
+            "psnr": list(),
+            "ssim": list(),
+            "ssim2": list(),
+            "psnr2": list(),
+            "mse": list(),
+        }
+        # testset = ["2", "3", "4", "5", "6"]
+        for t in testset:
+            logger.info("image #{0}".format(t))
+            inp = "{0}/noisy/{1}{2}.png".format(image_path_test, t, npref)
+            logger.info(inp)
+            argref = "{0}/ref/{1}.png".format(image_path_test, t)
+            _, _ssim, _, _psnr2, _mse, _ = denoise(
+                inp,
+                gtv,
+                argref,
+                stride=stride,
+                width=imgw,
+                prefix=seed,
+                opt=opt,
+                args=args,
+                logger=logger,
+            )
+            # testeva["psnr"].append(_psnr)
+            testeva["ssim"].append(_ssim)
+            # testeva["ssim2"].append(_ssim2)
+            testeva["psnr2"].append(_psnr2)
+            testeva["mse"].append(_mse)
+            try:
+                from skimage.metrics import structural_similarity as compare_ssim
+            except Exception:
+                from skimage.measure import compare_ssim
+
+            img1 = cv2.imread(inp)[:, :, : opt.channels]
+            img2 = cv2.imread(argref)[:, :, : opt.channels]
+            #(score, diff) = compare_ssim(img1, img2, full=True, channel_axis=True)
+            (score, diff) = compare_ssim(img1[:,:,0], img2[:,:,0], full=True)
+            logger.info("Original {0:.2f} {1:.2f}".format(cv2.PSNR(img1, img2), score))
+        logger.info("========================")
+        # logger.info("MEAN PSNR: {:.2f}".format(np.mean(testeva["psnr"])))
+        logger.info("MEAN SSIM: {:.3f}".format(np.mean(testeva["ssim"])))
+        # logger.info("MEAN SSIM2 (patch-based SSIM): {:.2f}".format(np.mean(testeva["ssim2"])))
+        logger.info(
+            "MEAN PSNR2 (image-based PSNR): {:.2f}".format(np.mean(testeva["psnr2"]))
+        )
+        logger.info("MEAN MSE (image-based MSE): {:.2f}".format(np.mean(testeva["mse"])))
+        logger.info("========================")
     return traineva, testeva
 
 opt = OPT(
@@ -313,38 +406,7 @@ opt = OPT(
     cuda=True if torch.cuda.is_available() else False
     )
 if __name__ == "__main__":
-    # global opt
-    parser = argparse.ArgumentParser()
-
-    parser.add_argument(
-        "-w",
-        "--width",
-        help="Resize image to a square image with given width",
-        type=int,
-    )
-    parser.add_argument("-m", "--model")
-    parser.add_argument("--stride", default=18, type=int)
-    parser.add_argument(
-        "--multi", default=30, type=int, help="# of patches evaluation in parallel"
-    )
-    parser.add_argument("--opt", default="opt")
-    parser.add_argument("--image_path_train")
-    parser.add_argument("--image_path_test")
-    parser.add_argument("--layers", default=1, type=int)
-    args = parser.parse_args()
-    #opt = pickle.load(open(args.opt, "rb"))
-    if args.model:
-        model_name = args.model
-    else:
-        model_name = "GTV_20.pkl"
-    if args.image_path_train:
-        image_path_train = args.image_path_train
-    else:
-        image_path_train = "gauss"
-    if args.image_path_test:
-        image_path_test = args.image_path_test
-    else:
-        image_path_test = "gauss"
+    args = get_args()
     logging.basicConfig(
         filename="log/test_gtv_{0}.log".format(time.strftime("%Y-%m-%d-%H%M")),
         filemode="a",
@@ -363,13 +425,14 @@ if __name__ == "__main__":
     logger.info(" ".join(sys.argv))
     _, _ = main_eva(
         seed="gauss",
-        model_name=model_name,
+        model_name=args.model,
         trainset=["1", "2", "3", "4"],
         testset=["1", "2", "3", "4"],
         imgw=args.width,
         verbose=1,
-        image_path_train=image_path_train,
-        image_path_test=image_path_test,
+        image_path_train=args.image_path_train,
+        image_path_test=args.image_path_test,
+        image_path = args.image_path,
         noise_type="gauss",
         opt=opt,
         args=args,
