@@ -9,6 +9,7 @@ import argparse
 from train_gtv import *
 import logging
 
+
 cuda = True if torch.cuda.is_available() else False
 if cuda:
     dtype = torch.cuda.FloatTensor
@@ -272,6 +273,7 @@ def main_eva(
         img4 = np.array(cv2.imread(img_ref_p)[:, :, : opt.channels])
         difference = np.abs(img4 - img3)
         # Plot the solid line chart for the difference
+        logging.basicConfig(level=logging.ERROR)
         logging.getLogger('matplotlib.font_manager').setLevel(logging.ERROR)
         fig, axes  = plt.subplots(2,2, figsize=(8,8))
         axes[0,0].imshow(img3,cmap='gray')
