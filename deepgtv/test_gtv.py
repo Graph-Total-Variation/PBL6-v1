@@ -271,24 +271,24 @@ def main_eva(
         img_ref_p =   "result/ref_ref.png"
         img3 = np.array(cv2.imread(img_noise_p)[:, :, : opt.channels])
         img4 = np.array(cv2.imread(img_ref_p)[:, :, : opt.channels])
-        difference = np.abs(img4 - img3)
-        # Plot the solid line chart for the difference
+        (score1, diff) = compare_ssim(img3[:,:,0], img2[:,:,0], full=True)
         logging.basicConfig(level=logging.ERROR)
         logging.getLogger('matplotlib.font_manager').setLevel(logging.ERROR)
-        fig, axes  = plt.subplots(2,2, figsize=(8,8))
-        axes[0,0].imshow(img3,cmap='gray')
-        axes[0,0].set_title('denoise')
-
-        axes[0,1].imshow(img4,cmap='gray')
-        axes[0,1].set_title('grouth truth')
+        import matplotlib
+        matplotlib.use('Agg')
+        fig, axes  = plt.subplots(3,1, figsize=(8,8))
+        axes[0].imshow(img4,cmap='gray')
+        axes[0].set_title('grouth truth')
+        axes[0].axis('off')
         
-        plt.subplot(2, 2)
-        plt.plot(difference.ravel(), color='black')
-        plt.title('Pixel-wise Difference between Ground Truth and Denoised Image')
-        plt.xlabel('Pixel Index')
-        plt.ylabel('Absolute Pixel Difference')
-        plt.grid()
-        axes[1, 1].axis('off')
+        axes[1].imshow(img1,cmap='gray')
+        axes[1].set_title('noisy\nPSNR:{}\nSSIM:{}'.format(cv2.PSNR(img1, img2), score))
+        axes[1].axis('off')
+        
+        axes[2].imshow(img1,cmap='gray')
+        axes[2].set_title('denoise\nPSNR:{}\nSSIM:{}'.format(cv2.PSNR(img3, img2), score1))
+        axes[2].axis('off')
+        
         plt.tight_layout()
         plt.savefig('output_image.png')
         plt.show()
