@@ -290,6 +290,7 @@ def main_eva(
         plt.grid()
         axes[1, 1].axis('off')
         plt.tight_layout()
+        plt.savefig('output_image.png')
         plt.show()
     if image_path_train:
         logger.info("EVALUATING TRAIN SET")
