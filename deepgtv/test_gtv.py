@@ -276,19 +276,19 @@ def main_eva(
         logging.getLogger('matplotlib.font_manager').setLevel(logging.ERROR)
         import matplotlib
         matplotlib.use('Agg')
-        fig, axes  = plt.subplots(3,1, figsize=(8,8))
+        fig, axes = plt.subplots(1, 3, figsize=(12, 4))
         axes[0].imshow(img4,cmap='gray')
         axes[0].set_title('grouth truth')
         axes[0].axis('off')
         
         axes[1].imshow(img1,cmap='gray')
-        axes[1].set_title('noisy\nPSNR:{}\nSSIM:{}'.format(cv2.PSNR(img1, img2), score))
+        axes[1].set_title('noisy\nPSNR:{:.2f}\nSSIM:{:.2f}'.format(cv2.PSNR(img1, img2), score))
         axes[1].axis('off')
         
-        axes[2].imshow(img1,cmap='gray')
-        axes[2].set_title('denoise\nPSNR:{}\nSSIM:{}'.format(cv2.PSNR(img3, img2), score1))
+        axes[2].imshow(img3,cmap='gray')
+        axes[2].set_title('denoise\nPSNR:{:.2f}\nSSIM:{:.2f}'.format(cv2.PSNR(img3, img2), score1))
         axes[2].axis('off')
-        
+
         plt.tight_layout()
         plt.savefig('output_image.png')
         plt.show()
