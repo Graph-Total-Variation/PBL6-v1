@@ -9,6 +9,7 @@ import argparse
 from train_gtv import *
 import logging
 
+
 cuda = True if torch.cuda.is_available() else False
 if cuda:
     dtype = torch.cuda.FloatTensor
@@ -16,7 +17,6 @@ else:
     dtype = torch.FloatTensor
 
 resroot = "result"
-
 
 def get_args():
     parser = argparse.ArgumentParser()
@@ -37,11 +37,10 @@ def get_args():
     parser.add_argument("--image_path_test")
     parser.add_argument("--image_path")
     parser.add_argument("--layers", default=1, type=int)
-
+    
     args = parser.parse_args()
     return args
-
-
+    
 def denoise(
     inp,
     gtv,
@@ -85,7 +84,7 @@ def denoise(
         ref = cv2.cvtColor(ref, cv2.COLOR_RGB2GRAY)
         #ref = np.expand_dims(ref, axis=2)
         ref_p = resroot + "/ref_" + argref.split("/")[-1]
-        plt.imsave(ref_p, ref, cmap='gray')
+        plt.imsave(ref_p, ref,cmap='gray')
         ref = np.expand_dims(ref, axis=2)
         logger.info(ref_p)
         tref = ref.copy()
@@ -99,8 +98,7 @@ def denoise(
     if argref:
         T1r = ref
 
-    T1 = torch.nn.functional.pad(
-        T1, (0, stride, 0, stride), mode="constant", value=0)
+    T1 = torch.nn.functional.pad(T1, (0, stride, 0, stride), mode="constant", value=0)
     shapex = T1.shape
     T2 = (
         torch.from_numpy(T1.detach().numpy().transpose(1, 2, 0))
@@ -120,10 +118,9 @@ def denoise(
     with torch.no_grad():
         for ii, i in enumerate(range(0, T2.shape[0], MAX_PATCH)):
             P = gtv.predict(
-                T2[i: (i + MAX_PATCH), :, :,
-                   :].float().contiguous().type(dtype),
+                T2[i : (i + MAX_PATCH), :, :, :].float().contiguous().type(dtype),
             )
-            dummy[i: (i + MAX_PATCH)] = P
+            dummy[i : (i + MAX_PATCH)] = P
     dummy = dummy.view(oT2s0, -1, opt.channels, opt.width, opt.width)
     dummy = dummy.cpu()
     if verbose:
@@ -132,15 +129,14 @@ def denoise(
         logger.info("Prediction time: {0}".format(time.time() - tstart))
 
     dummy = (
-        patch_merge(dummy, stride=stride, shape=shapex,
-                    shapeorg=shape).detach().numpy()
+        patch_merge(dummy, stride=stride, shape=shapex, shapeorg=shape).detach().numpy()
     )
 
     ds = np.array(dummy).copy()
     d = np.minimum(np.maximum(ds, 0), 255)
     logger.info("RANGE: {0} - {1}".format(d.min(), d.max()))
     d = d.transpose(1, 2, 0) / 255
-    d = d[:, :, 0]
+    d = d[:,:,0]
     if 0:
         opath = args.output
     else:
@@ -158,7 +154,7 @@ def denoise(
         psnr2 = cv2.PSNR(tref, d)
         logger.info("PSNR: {:.5f}".format(psnr2))
         #(score, diff) = compare_ssim(tref, d, full=True, channel_axis=True)
-        (score, diff) = compare_ssim(tref[:, :, 0], d[:, :, 0], full=True)
+        (score, diff) = compare_ssim(tref[:,:,0], d[:,:,0], full=True)
         logger.info("SSIM: {:.5f}".format(score))
     logger.info("Saved {0}".format(opath))
     if argref:
@@ -180,8 +176,8 @@ def patch_merge(P, stride=36, shape=None, shapeorg=None):
     for i in range(S1):
         for j in range(S2):
 
-            R[:, ri: (ri + m), rj: (rj + m)] += P[i, j, :, :, :].cpu()
-            Rc[:, ri: (ri + m), rj: (rj + m)] += 1
+            R[:, ri : (ri + m), rj : (rj + m)] += P[i, j, :, :, :].cpu()
+            Rc[:, ri : (ri + m), rj : (rj + m)] += 1
             rj += stride
             c += 1
         ri += stride
@@ -199,7 +195,7 @@ def main_eva(
     verbose=0,
     image_path_train=None,
     image_path_test=None,
-    image_path=None,
+    image_path = None,
     noise_type="gauss",
     opt=None,
     args=None,
@@ -213,8 +209,7 @@ def main_eva(
         opt.logger.info(torch.cuda.get_device_name(0))
     else:
         dtype = torch.FloatTensor
-    # just initialize to load the trained model, no need to change
-    gtv = GTV(width=36, cuda=cuda, opt=opt)
+    gtv = GTV(width=36, cuda=cuda, opt=opt)  # just initialize to load the trained model, no need to change
     PATH = model_name
     device = torch.device("cuda") if cuda else torch.device("cpu")
     gtv.load_state_dict(torch.load(PATH, map_location=device))
@@ -247,15 +242,15 @@ def main_eva(
         inp = "{0}/noisy.png".format(image_path)
         argref = "{0}/ref.png".format(image_path)
         _, _ssim, _, _psnr2, _mse, _ = denoise(
-            inp,
-            gtv,
-            argref,
-            stride=args.stride,
-            width=imgw,
-            prefix=seed,
-            opt=opt,
-            args=args,
-            logger=logger,
+                inp,
+                gtv,
+                argref,
+                stride=args.stride,
+                width=imgw,
+                prefix=seed,
+                opt=opt,
+                args=args,
+                logger=logger,
         )
         # traineva["psnr"].append(_psnr)
         traineva["ssim"] = _ssim
@@ -270,31 +265,32 @@ def main_eva(
         img1 = cv2.imread(inp)[:, :, : opt.channels]
         img2 = cv2.imread(argref)[:, :, : opt.channels]
         #(score, diff) = compare_ssim(img1, img2, full=True, channel_axis=True)
-        (score, diff) = compare_ssim(img1[:, :, 0], img2[:, :, 0], full=True)
-        logger.info("Original {0:.2f} {1:.2f}".format(
-            cv2.PSNR(img1, img2), score))
-        img_noise_p = "result/gauss_noisy.png"
-        img_ref_p = "result/ref_ref.png"
+        (score, diff) = compare_ssim(img1[:,:,0], img2[:,:,0], full=True)
+        logger.info("Original {0:.2f} {1:.2f}".format(cv2.PSNR(img1, img2), score))
+        img_noise_p =  "result/gauss_noisy.png"
+        img_ref_p =   "result/ref_ref.png"
         img3 = np.array(cv2.imread(img_noise_p)[:, :, : opt.channels])
         img4 = np.array(cv2.imread(img_ref_p)[:, :, : opt.channels])
-        difference = np.abs(img4 - img3)
-        # Plot the solid line chart for the difference
+        (score1, diff) = compare_ssim(img3[:,:,0], img2[:,:,0], full=True)
+        logging.basicConfig(level=logging.ERROR)
         logging.getLogger('matplotlib.font_manager').setLevel(logging.ERROR)
-        fig, axes = plt.subplots(2, 2, figsize=(8, 8))
-        axes[0, 0].imshow(img3, cmap='gray')
-        axes[0, 0].set_title('denoise')
+        import matplotlib
+        matplotlib.use('Agg')
+        fig, axes = plt.subplots(1, 3, figsize=(12, 4))
+        axes[0].imshow(img4,cmap='gray')
+        axes[0].set_title('grouth truth')
+        axes[0].axis('off')
+        
+        axes[1].imshow(img1,cmap='gray')
+        axes[1].set_title('noisy\nPSNR:{:.2f}\nSSIM:{:.2f}'.format(cv2.PSNR(img1, img2), score))
+        axes[1].axis('off')
+        
+        axes[2].imshow(img3,cmap='gray')
+        axes[2].set_title('denoise\nPSNR:{:.2f}\nSSIM:{:.2f}'.format(cv2.PSNR(img3, img2), score1))
+        axes[2].axis('off')
 
-        axes[0, 1].imshow(img4, cmap='gray')
-        axes[0, 1].set_title('grouth truth')
-
-        plt.subplot(2, 2)
-        plt.plot(difference.ravel(), color='black')
-        plt.title('Pixel-wise Difference between Ground Truth and Denoised Image')
-        plt.xlabel('Pixel Index')
-        plt.ylabel('Absolute Pixel Difference')
-        plt.grid()
-        axes[1, 1].axis('off')
         plt.tight_layout()
+        plt.savefig('output_image.png')
         plt.show()
     if image_path_train:
         logger.info("EVALUATING TRAIN SET")
@@ -343,20 +339,16 @@ def main_eva(
             img1 = cv2.imread(inp)[:, :, : opt.channels]
             img2 = cv2.imread(argref)[:, :, : opt.channels]
             #(score, diff) = compare_ssim(img1, img2, full=True, channel_axis=True)
-            (score, diff) = compare_ssim(
-                img1[:, :, 0], img2[:, :, 0], full=True)
-            logger.info("Original {0:.2f} {1:.2f}".format(
-                cv2.PSNR(img1, img2), score))
+            (score, diff) = compare_ssim(img1[:,:,0], img2[:,:,0], full=True)
+            logger.info("Original {0:.2f} {1:.2f}".format(cv2.PSNR(img1, img2), score))
         logger.info("========================")
         # logger.info("MEAN PSNR: {:.2f}".format(np.mean(traineva["psnr"])))
         logger.info("MEAN SSIM: {:.3f}".format(np.mean(traineva["ssim"])))
         # logger.info("MEAN SSIM2 (patch-based SSIM): {:.2f}".format(np.mean(traineva["ssim2"])))
         logger.info(
-            "MEAN PSNR2 (image-based PSNR): {:.2f}".format(
-                np.mean(traineva["psnr2"]))
+            "MEAN PSNR2 (image-based PSNR): {:.2f}".format(np.mean(traineva["psnr2"]))
         )
-        logger.info(
-            "MEAN MSE (image-based MSE): {:.2f}".format(np.mean(traineva["mse"])))
+        logger.info("MEAN MSE (image-based MSE): {:.2f}".format(np.mean(traineva["mse"])))
         logger.info("========================")
 
     if image_path_test:
@@ -405,23 +397,18 @@ def main_eva(
             img1 = cv2.imread(inp)[:, :, : opt.channels]
             img2 = cv2.imread(argref)[:, :, : opt.channels]
             #(score, diff) = compare_ssim(img1, img2, full=True, channel_axis=True)
-            (score, diff) = compare_ssim(
-                img1[:, :, 0], img2[:, :, 0], full=True)
-            logger.info("Original {0:.2f} {1:.2f}".format(
-                cv2.PSNR(img1, img2), score))
+            (score, diff) = compare_ssim(img1[:,:,0], img2[:,:,0], full=True)
+            logger.info("Original {0:.2f} {1:.2f}".format(cv2.PSNR(img1, img2), score))
         logger.info("========================")
         # logger.info("MEAN PSNR: {:.2f}".format(np.mean(testeva["psnr"])))
         logger.info("MEAN SSIM: {:.3f}".format(np.mean(testeva["ssim"])))
         # logger.info("MEAN SSIM2 (patch-based SSIM): {:.2f}".format(np.mean(testeva["ssim2"])))
         logger.info(
-            "MEAN PSNR2 (image-based PSNR): {:.2f}".format(
-                np.mean(testeva["psnr2"]))
+            "MEAN PSNR2 (image-based PSNR): {:.2f}".format(np.mean(testeva["psnr2"]))
         )
-        logger.info(
-            "MEAN MSE (image-based MSE): {:.2f}".format(np.mean(testeva["mse"])))
+        logger.info("MEAN MSE (image-based MSE): {:.2f}".format(np.mean(testeva["mse"])))
         logger.info("========================")
     return traineva, testeva
-
 
 opt = OPT(
     batch_size=32,
@@ -431,7 +418,7 @@ opt = OPT(
     u_max=1000,
     u_min=0.0001,
     cuda=True if torch.cuda.is_available() else False
-)
+    )
 if __name__ == "__main__":
     args = get_args()
     logging.basicConfig(
@@ -459,11 +446,11 @@ if __name__ == "__main__":
         verbose=1,
         image_path_train=args.image_path_train,
         image_path_test=args.image_path_test,
-        image_path=args.image_path,
+        image_path = args.image_path,
         noise_type="gauss",
         opt=opt,
         args=args,
         logger=logger,
     )
 
-# python test_gtv.py -w 512 -m model/GTV_19.pkl --stride 9 --multi 200 --image_path_test dataset/Test --image_path_train dataset/dataset_structure
+#python test_gtv.py -w 512 -m model/GTV_19.pkl --stride 9 --multi 200 --image_path_test dataset/Test --image_path_train dataset/dataset_structure
