@@ -228,6 +228,16 @@ opt = OPT(
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
 
+    # parser.add_argument("-m", "--model", default="GTV.pkl")
+    # parser.add_argument("-c", "--cont")
+    # parser.add_argument("--batch", default=64)
+    # parser.add_argument("--lr", default=8e-6, type=float)
+    # parser.add_argument("--epoch", default=200)
+    # parser.add_argument("--umax", default=1000, type=float)
+    # parser.add_argument("--umin", default=0.001, type=float)
+    # parser.add_argument("--seed", default=0, type=float)
+    # parser.add_argument("--width", default=36, type=int)
+    # parser.add_argument("--train", default="gauss_batch")
     parser.add_argument("-m", "--model", default="GTV.pkl")
     parser.add_argument("-c", "--cont")
     parser.add_argument("--batch", default=64)
@@ -238,7 +248,7 @@ if __name__ == "__main__":
     parser.add_argument("--seed", default=0, type=float)
     parser.add_argument("--width", default=36, type=int)
     parser.add_argument("--train", default="gauss_batch")
-
+    
     args = parser.parse_args()
     if args.cont:
         cont = args.cont
@@ -273,7 +283,7 @@ if __name__ == "__main__":
         model_name=args.model,
         cont=cont,
         epoch=int(args.epoch),
-        subset=["1", "2", "3", "4"],
+        subset=['2','3','5','6','8','9','11','12','14','15','17','18','20','21','23','24','26','27','29','30','32','33'],
         args=args,
     )
 
