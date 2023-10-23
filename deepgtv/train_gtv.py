@@ -100,13 +100,11 @@ def main(
     for epoch in range(total_epoch):  # loop over the dataset multiple times
         # running_loss_inside = 0.0
         running_loss = 0.0
-        tam = 0
         opt.logger.info(
                         "\tEpoch: {0}".format(epoch)
                     )
         for i, data in enumerate(dataloader, 0):  # start index at 0
             # get the inputs; data is a list of [inputs, labels]
-            tam = i
             inputs = data["nimg"][:, : opt.channels, :, :].float().type(dtype)
             labels = data["rimg"][:, : opt.channels, :, :].float().type(dtype)
             # zero the parameter gradients
@@ -157,7 +155,7 @@ def main(
         tnow = time.time()
         opt.logger.info(
             "[{0}] \x1b[31mLOSS\x1b[0m: {1:.8f}, time elapsed: {2:.1f} secs, epoch time: {3:.1f} secs".format(
-                epoch + 1, running_loss / (ld * (tam + 1)), tnow - tstart, tnow - tprev
+                epoch + 1, running_loss / (ld * (i + 1)), tnow - tstart, tnow - tprev
             )
         )
         tprev = tnow

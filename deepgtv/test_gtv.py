@@ -37,7 +37,7 @@ def get_args():
     parser.add_argument("--image_path_test")
     parser.add_argument("--image_path")
     parser.add_argument("--layers", default=1, type=int)
-    
+    parser.add_argument("--row", default=100, type=int)
     args = parser.parse_args()
     return args
     
@@ -276,19 +276,43 @@ def main_eva(
         logging.getLogger('matplotlib.font_manager').setLevel(logging.ERROR)
         import matplotlib
         matplotlib.use('Agg')
-        fig, axes = plt.subplots(1, 3, figsize=(12, 4))
-        axes[0].imshow(img4,cmap='gray')
-        axes[0].set_title('grouth truth')
-        axes[0].axis('off')
+        intensity_original = img4[args.row, :]
+        intensity_noisy = img1[args.row, :]
+        intensity_denoised = img3[args.row, :]
+        # Tạo trục X (chỉ số cột)
+        x_direction = range(intensity_original.shape[0])
+        fig, axes = plt.subplots(2, 3, figsize=(12, 6))
+        axes[0,0].imshow(img4,cmap='gray')
+        axes[0,0].set_title('grouth truth')
+        axes[0,0].axis('off')
         
-        axes[1].imshow(img1,cmap='gray')
-        axes[1].set_title('noisy\nPSNR:{:.2f}\nSSIM:{:.2f}'.format(cv2.PSNR(img1, img2), score))
-        axes[1].axis('off')
+        axes[0,1].imshow(img1,cmap='gray')
+        axes[0,1].set_title('noisy\nPSNR:{:.2f}\nSSIM:{:.2f}'.format(cv2.PSNR(img1, img2), score))
+        axes[0,1].axis('off')
         
-        axes[2].imshow(img3,cmap='gray')
-        axes[2].set_title('denoise\nPSNR:{:.2f}\nSSIM:{:.2f}'.format(cv2.PSNR(img3, img2), score1))
-        axes[2].axis('off')
+        axes[0,2].imshow(img3,cmap='gray')
+        axes[0,2].set_title('denoise\nPSNR:{:.2f}\nSSIM:{:.2f}'.format(cv2.PSNR(img3, img2), score1))
+        axes[0,2].axis('off')
+        
+        axes[1,0].plot(x_direction, intensity_original, color='blue', label='Original Image', linestyle='--', linewidth=2)
+        axes[1,0].set_xlabel('X Direction')
+        axes[1,0].set_ylabel('Intensity')
+        axes[1,0].legend()
+        axes[1,0].grid(True)
 
+        axes[1,1].plot(x_direction, intensity_original, color='blue', label='Original Image', linestyle='--', linewidth=1)
+        axes[1,1].plot(x_direction, intensity_noisy, color='black', label='Noisy Image', linestyle='--', linewidth=2)
+        axes[1,1].set_xlabel('X Direction')
+        axes[1,1].set_ylabel('Intensity')
+        axes[1,1].legend()
+        axes[1,1].grid(True)
+
+        axes[1,2].plot(x_direction, intensity_original, color='blue', label='Original Image', linestyle='--', linewidth=1)
+        axes[1,2].plot(x_direction, intensity_noisy, color='black', label='Noisy Image', linestyle='--', linewidth=2)
+        axes[1,2].set_xlabel('X Direction')
+        axes[1,2].set_ylabel('Intensity')
+        axes[1,2].legend()
+        axes[1,2].grid(True)
         plt.tight_layout()
         plt.savefig('output_image.png')
         plt.show()
