@@ -155,7 +155,7 @@ def main(
         tnow = time.time()
         opt.logger.info(
             "[{0}] \x1b[31mLOSS\x1b[0m: {1:.8f}, time elapsed: {2:.1f} secs, epoch time: {3:.1f} secs".format(
-                epoch + 1, running_loss / (ld * (i + 1)), tnow - tstart, tnow - tprev
+                epoch + 1, running_loss / (i + 1), tnow - tstart, tnow - tprev
             )
         )
         tprev = tnow
