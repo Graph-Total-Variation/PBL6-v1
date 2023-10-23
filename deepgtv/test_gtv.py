@@ -308,7 +308,7 @@ def main_eva(
         axes[1,1].grid(True)
 
         axes[1,2].plot(x_direction, intensity_original, color='blue', label='Original Image', linestyle='--', linewidth=1)
-        axes[1,2].plot(x_direction, intensity_denoised, color='black', label='Noisy Image', linestyle='--', linewidth=2)
+        axes[1,2].plot(x_direction, intensity_denoised, color='black', label='Denoise Image', linestyle='--', linewidth=2)
         axes[1,2].set_xlabel('X Direction')
         axes[1,2].set_ylabel('Intensity')
         axes[1,2].legend()
