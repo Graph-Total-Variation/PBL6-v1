@@ -135,7 +135,7 @@ class RENOIR_Dataset(Dataset):
                 for j in self.subset:
                     if j in self.nimg_name[i]:
                         nimg_name.append(self.nimg_name[i])
-                        # if j in self.rimg_name[i]:
+                    if j in self.rimg_name[i]:
                         rimg_name.append(self.rimg_name[i])
             self.nimg_name = sorted(nimg_name)
             self.rimg_name = sorted(rimg_name)

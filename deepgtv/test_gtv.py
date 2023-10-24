@@ -209,7 +209,7 @@ def main_eva(
         opt.logger.info(torch.cuda.get_device_name(0))
     else:
         dtype = torch.FloatTensor
-    gtv = GTV(width=36, cuda=cuda, opt=opt)  # just initialize to load the trained model, no need to change
+    gtv = GTV(width=6, cuda=cuda, opt=opt)  # just initialize to load the trained model, no need to change
     PATH = model_name
     device = torch.device("cuda") if cuda else torch.device("cpu")
     gtv.load_state_dict(torch.load(PATH, map_location=device))
