@@ -273,9 +273,9 @@ class OPT:
     def __init__(
         self,
         batch_size=100,
-        width=36,
+        width=6,
         connectivity="8",
-        channels=3,
+        channels=1,
         u_max=100,
         u_min=10,
         lr=1e-4,
