@@ -85,8 +85,8 @@ def main(
         opt.logger.info("LOAD PREVIOUS GTV:", cont)
     if cuda:
         gtv.cuda()
-    import pytorch_msssim
-    criterion = pytorch_msssim.SSIM()
+    import pytorch_ssim
+    criterion = pytorch_ssim.SSIM()
     optimizer = optim.SGD(gtv.parameters(), lr=opt.lr, momentum=opt.momentum)
 
     if cont:
