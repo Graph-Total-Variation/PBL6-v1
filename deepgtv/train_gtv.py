@@ -12,7 +12,10 @@ from dgtv.dgtv import *
 import pickle
 import logging
 import sys
-
+try:
+    from skimage.metrics import structural_similarity as compare_ssim
+except Exception:
+    from skimage.measure import compare_ssim
 
 def main(
     seed, model_name, cont=None, optim_name=None, subset=None, epoch=100, args=None
@@ -124,9 +127,10 @@ def main(
             if epoch == 0 and (i + 1) % 80 == 0:
                 with torch.no_grad():
                     histW = gtv(inputs, debug=1)
+                    (score, diff) = compare_ssim(histW[:,:,0], labels[:,:,0], full=True)
                     opt.logger.info(
                         "\tLOSS: {0:.8f}".format(
-                            (histW - labels).square().mean().item()
+                            score
                         )
                     )
                 if opt.ver:  # experimental version
@@ -164,8 +168,9 @@ def main(
         if ((epoch + 1) % 1 == 0) or (epoch + 1) == total_epoch:
             with torch.no_grad():
                 histW = gtv(inputs, debug=1)
+                (score, diff) = compare_ssim(histW[:,:,0], labels[:,:,0], full=True)
                 opt.logger.info(
-                    "\tLOSS: {0:.8f}".format((histW - labels).square().mean().item())
+                    "\tLOSS: {0:.8f}".format(score)
                 )
             if opt.ver:  # experimental version
                 opt.logger.info(
