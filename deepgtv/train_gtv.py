@@ -12,11 +12,11 @@ from dgtv.dgtv import *
 import pickle
 import logging
 import sys
+import pytorch_msssim
 try:
     from skimage.metrics import structural_similarity as compare_ssim
 except Exception:
     from skimage.measure import compare_ssim
-
 def main(
     seed, model_name, cont=None, optim_name=None, subset=None, epoch=100, args=None
 ):
@@ -85,8 +85,7 @@ def main(
         opt.logger.info("LOAD PREVIOUS GTV:", cont)
     if cuda:
         gtv.cuda()
-    from piqa import SSIM
-    criterion = SSIMLoss()
+    criterion = pytorch_msssim.SSIM(window_size=11)
     optimizer = optim.SGD(gtv.parameters(), lr=opt.lr, momentum=opt.momentum)
 
     if cont:
