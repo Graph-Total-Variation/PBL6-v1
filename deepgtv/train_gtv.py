@@ -82,7 +82,8 @@ def main(
         opt.logger.info("LOAD PREVIOUS GTV:", cont)
     if cuda:
         gtv.cuda()
-    criterion = nn.MSELoss()
+    import pytorch_msssim
+    criterion = pytorch_msssim.SSIM()
     optimizer = optim.SGD(gtv.parameters(), lr=opt.lr, momentum=opt.momentum)
 
     if cont:
@@ -112,7 +113,7 @@ def main(
             # forward + backward + optimize
             # outputs = gtv.forward_approx(inputs, debug=0)
             outputs = gtv(inputs, debug=0)
-            loss = criterion(outputs, labels)
+            loss = 1 - criterion(outputs, labels)
 
             loss.backward()
             torch.nn.utils.clip_grad_norm_(gtv.parameters(), 5e1)
