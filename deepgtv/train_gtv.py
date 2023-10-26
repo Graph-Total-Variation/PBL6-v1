@@ -85,8 +85,8 @@ def main(
         opt.logger.info("LOAD PREVIOUS GTV:", cont)
     if cuda:
         gtv.cuda()
-    import pytorch_ssim
-    criterion = pytorch_ssim.SSIM()
+    from piqa import SSIM
+    criterion = SSIMLoss()
     optimizer = optim.SGD(gtv.parameters(), lr=opt.lr, momentum=opt.momentum)
 
     if cont:
@@ -220,7 +220,9 @@ def main(
     ax.set(ylim=[0, ax.get_ylim()[1] * 1.05])
     fig.savefig("loss.png")
 
-
+class SSIMLoss(SSIM):
+    def forward(self, x, y):
+        return 1. - super().forward(x, y)
 opt = OPT(
     batch_size=50,
     channels=1,
