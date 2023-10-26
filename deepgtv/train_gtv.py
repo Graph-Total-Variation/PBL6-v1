@@ -8,7 +8,6 @@ from torch.utils.data import DataLoader
 import torchvision.transforms as transforms
 import torch.optim as optim
 import matplotlib.pyplot as plt
-# from dgtv.my_dgtv import *
 from dgtv.dgtv import *
 import pickle
 import logging
@@ -42,8 +41,7 @@ def main(
         subset = [i + "_" for i in subset]
     dataset = RENOIR_Dataset(
         img_dir=os.path.join(opt.train),
-        transform=transforms.Compose(
-            [standardize(normalize=False), ToTensor()]),
+        transform=transforms.Compose([standardize(normalize=False), ToTensor()]),
         subset=None,
     )
     opt.logger.info("Splitting patches...")
@@ -52,8 +50,7 @@ def main(
     )
     dataset = RENOIR_Dataset(
         img_dir=os.path.join("tmp", "patches"),
-        transform=transforms.Compose(
-            [standardize(normalize=False), ToTensor()]),
+        transform=transforms.Compose([standardize(normalize=False), ToTensor()]),
         subset=subset,
     )
 
@@ -79,7 +76,7 @@ def main(
         cuda=cuda,
         opt=opt,
     )
-
+    
     if cont:
         gtv.load_state_dict(torch.load(cont))
         opt.logger.info("LOAD PREVIOUS GTV:", cont)
@@ -98,14 +95,14 @@ def main(
     opt._print()
     pickle.dump(opt, open("opt", "wb"))
     ld = len(dataset)
-    ld = 1
+    #ld = 1
     # scaler = torch.cuda.amp.GradScaler()
     for epoch in range(total_epoch):  # loop over the dataset multiple times
         # running_loss_inside = 0.0
         running_loss = 0.0
         opt.logger.info(
-            "\tEpoch: {0}".format(epoch)
-        )
+                        "\tEpoch: {0}".format(epoch)
+                    )
         for i, data in enumerate(dataloader, 0):  # start index at 0
             # get the inputs; data is a list of [inputs, labels]
             inputs = data["nimg"][:, : opt.channels, :, :].float().type(dtype)
@@ -158,8 +155,7 @@ def main(
         tnow = time.time()
         opt.logger.info(
             "[{0}] \x1b[31mLOSS\x1b[0m: {1:.8f}, time elapsed: {2:.1f} secs, epoch time: {3:.1f} secs".format(
-                epoch + 1, running_loss /
-                (ld * (i + 1)), tnow - tstart, tnow - tprev
+                epoch + 1, running_loss / (i + 1), tnow - tstart, tnow - tprev
             )
         )
         tprev = tnow
@@ -168,8 +164,7 @@ def main(
             with torch.no_grad():
                 histW = gtv(inputs, debug=1)
                 opt.logger.info(
-                    "\tLOSS: {0:.8f}".format(
-                        (histW - labels).square().mean().item())
+                    "\tLOSS: {0:.8f}".format((histW - labels).square().mean().item())
                 )
             if opt.ver:  # experimental version
                 opt.logger.info(
@@ -207,16 +202,14 @@ def main(
 
         losshist.append(running_loss / (ld * (i + 1)))
     torch.save(gtv.state_dict(), SAVEDIR + str(epoch) + "." + SAVEPATH)
-    torch.save(optimizer.state_dict(), SAVEDIR +
-               str(epoch) + "." + SAVEPATH + "optim")
+    torch.save(optimizer.state_dict(), SAVEDIR + str(epoch) + "." + SAVEPATH + "optim")
 
     opt.logger.info("Total running time: {0:.3f}".format(time.time() - tstart))
     fig, ax = plt.subplots(1, 1, figsize=(12, 5))
 
     cumsum_vec = np.cumsum(np.insert(losshist, 0, 0))
     window_width = 30
-    ma_vec = (cumsum_vec[window_width:] -
-              cumsum_vec[:-window_width]) / window_width
+    ma_vec = (cumsum_vec[window_width:] - cumsum_vec[:-window_width]) / window_width
     ax.plot(ma_vec)
     ax.set(ylim=[0, ax.get_ylim()[1] * 1.05])
     fig.savefig("loss.png")
@@ -235,6 +228,16 @@ opt = OPT(
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
 
+    # parser.add_argument("-m", "--model", default="GTV.pkl")
+    # parser.add_argument("-c", "--cont")
+    # parser.add_argument("--batch", default=64)
+    # parser.add_argument("--lr", default=8e-6, type=float)
+    # parser.add_argument("--epoch", default=200)
+    # parser.add_argument("--umax", default=1000, type=float)
+    # parser.add_argument("--umin", default=0.001, type=float)
+    # parser.add_argument("--seed", default=0, type=float)
+    # parser.add_argument("--width", default=36, type=int)
+    # parser.add_argument("--train", default="gauss_batch")
     parser.add_argument("-m", "--model", default="GTV.pkl")
     parser.add_argument("-c", "--cont")
     parser.add_argument("--batch", default=64)
@@ -245,7 +248,7 @@ if __name__ == "__main__":
     parser.add_argument("--seed", default=0, type=float)
     parser.add_argument("--width", default=36, type=int)
     parser.add_argument("--train", default="gauss_batch")
-
+    
     args = parser.parse_args()
     if args.cont:
         cont = args.cont
@@ -262,8 +265,7 @@ if __name__ == "__main__":
     opt.legacy = True
     torch.manual_seed(args.seed)
     logging.basicConfig(
-        filename="log/train_gtv_{0}.log".format(
-            time.strftime("%Y-%m-%d-%H%M")),
+        filename="log/train_gtv_{0}.log".format(time.strftime("%Y-%m-%d-%H%M")),
         filemode="a",
         format="%(asctime)s %(name)s %(levelname)s %(message)s",
         datefmt="%H:%M:%S",
@@ -281,6 +283,7 @@ if __name__ == "__main__":
         model_name=args.model,
         cont=cont,
         epoch=int(args.epoch),
-        subset=['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'],
+        subset=['1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16'],
         args=args,
     )
+
