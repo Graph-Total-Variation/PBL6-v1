@@ -57,17 +57,15 @@ class cnnu(nn.Module):
     def __init__(self, u_min=1e-3, opt=None):
         super(cnnu, self).__init__()
         self.layer = nn.Sequential(
-            nn.Conv2d(opt.channels, 32, kernel_size=3, stride=2, padding=1),
-            nn.LeakyReLU(0.05),
-            nn.Conv2d(32, 32, kernel_size=3, stride=1, padding=1),
+            nn.Conv2d(opt.channels, 32, kernel_size=3, stride=1, padding=1),
             nn.LeakyReLU(0.05),
             nn.MaxPool2d(kernel_size=2, stride=2, ceil_mode=True),
             nn.Conv2d(32, 32, kernel_size=3, stride=1, padding=1),
             nn.LeakyReLU(0.05),
-            nn.MaxPool2d(kernel_size=2, stride=2, ceil_mode=True),
-            nn.Conv2d(32, 32, kernel_size=3, stride=1, padding=1),
-            nn.LeakyReLU(0.05),
-            nn.MaxPool2d(kernel_size=2, stride=2, ceil_mode=True),
+            # nn.MaxPool2d(kernel_size=2, stride=2, ceil_mode=True),
+            # nn.Conv2d(32, 32, kernel_size=3, stride=1, padding=1),
+            # nn.LeakyReLU(0.05),
+            # nn.MaxPool2d(kernel_size=2, stride=2, ceil_mode=True),
         )
 
         self.opt = opt
@@ -273,7 +271,7 @@ class OPT:
     def __init__(
         self,
         batch_size=100,
-        width=6,
+        width=8,
         connectivity="8",
         channels=1,
         u_max=100,
