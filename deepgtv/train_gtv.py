@@ -12,7 +12,21 @@ from dgtv.dgtv import *
 import pickle
 import logging
 import sys
-
+def get_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-m", "--model", default="GTV.pkl")
+    parser.add_argument("-c", "--cont")
+    parser.add_argument("--batch", default=64)
+    parser.add_argument("--lr", default=8e-6, type=float)
+    parser.add_argument("--epoch", default=200)
+    parser.add_argument("--umax", default=1000, type=float)
+    parser.add_argument("--umin", default=0.001, type=float)
+    parser.add_argument("--seed", default=0, type=float)
+    parser.add_argument("--width", default=36, type=int)
+    parser.add_argument("--train", default="gauss_batch")
+    
+    args = parser.parse_args()
+    return args
 def main(
     seed, model_name, cont=None, optim_name=None, subset=None, epoch=100, args=None
 ):
@@ -226,30 +240,7 @@ opt = OPT(
 )
 # batch_size = 50, admm_iter=4, prox_iter=3, delta=.1, channels=3, eta=.3, u=50, lr=8e-6, momentum=0.9, u_max=65, u_min=50)
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-
-    # parser.add_argument("-m", "--model", default="GTV.pkl")
-    # parser.add_argument("-c", "--cont")
-    # parser.add_argument("--batch", default=64)
-    # parser.add_argument("--lr", default=8e-6, type=float)
-    # parser.add_argument("--epoch", default=200)
-    # parser.add_argument("--umax", default=1000, type=float)
-    # parser.add_argument("--umin", default=0.001, type=float)
-    # parser.add_argument("--seed", default=0, type=float)
-    # parser.add_argument("--width", default=36, type=int)
-    # parser.add_argument("--train", default="gauss_batch")
-    parser.add_argument("-m", "--model", default="GTV.pkl")
-    parser.add_argument("-c", "--cont")
-    parser.add_argument("--batch", default=64)
-    parser.add_argument("--lr", default=8e-6, type=float)
-    parser.add_argument("--epoch", default=200)
-    parser.add_argument("--umax", default=1000, type=float)
-    parser.add_argument("--umin", default=0.001, type=float)
-    parser.add_argument("--seed", default=0, type=float)
-    parser.add_argument("--width", default=36, type=int)
-    parser.add_argument("--train", default="gauss_batch")
-    
-    args = parser.parse_args()
+    args = get_args()
     if args.cont:
         cont = args.cont
     else:
