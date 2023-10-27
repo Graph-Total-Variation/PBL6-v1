@@ -219,10 +219,10 @@ def main_eva(
     opt = gtv.opt
     # if not image_path_train:
     #     image_path_train = "..\\all\\all\\"
-    if noise_type == "gauss":
-        npref = "_g"
-    else:
-        npref = "_n"
+    # if noise_type == "gauss":
+    #     npref = "_g"
+    # else:
+    #     npref = "_n"
     if image_path:
         logger.info("EVALUATING IMAGE")
         traineva = {
@@ -333,7 +333,6 @@ def main_eva(
             "psnr2": list(),
             "mse": list(),
         }
-        stride = args.stride
         for t in trainset:
             logger.info("image #{0}".format(t))
             inp = "{0}/noisy/{1}.png".format(image_path_train, t)
@@ -343,7 +342,7 @@ def main_eva(
                 inp,
                 gtv,
                 argref,
-                stride=stride,
+                stride=args.stride,
                 width=imgw,
                 prefix=seed,
                 opt=opt,
@@ -394,14 +393,14 @@ def main_eva(
         # testset = ["2", "3", "4", "5", "6"]
         for t in testset:
             logger.info("image #{0}".format(t))
-            inp = "{0}/noisy/{1}{2}.png".format(image_path_test, t, npref)
+            inp = "{0}/noisy/{1}.png".format(image_path_test, t)
             logger.info(inp)
             argref = "{0}/ref/{1}.png".format(image_path_test, t)
             _, _ssim, _, _psnr2, _mse, _ = denoise(
                 inp,
                 gtv,
                 argref,
-                stride=stride,
+                stride=args.stride,
                 width=imgw,
                 prefix=seed,
                 opt=opt,
