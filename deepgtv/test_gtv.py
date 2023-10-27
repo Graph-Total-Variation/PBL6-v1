@@ -463,8 +463,8 @@ if __name__ == "__main__":
     _, _ = main_eva(
         seed="gauss",
         model_name=args.model,
-        trainset=["1", "2", "3", "4"],
-        testset=["1", "2", "3", "4"],
+        trainset=[i.split(".")[0] for i in os.listdir(os.path.join(args.image_path_train,"ref"))],
+        testset=[i.split(".")[0] for i in os.listdir(os.path.join(args.image_path_test,"ref"))],
         imgw=args.width,
         verbose=1,
         image_path_train=args.image_path_train,
