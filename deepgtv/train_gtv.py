@@ -13,7 +13,6 @@ import pickle
 import logging
 import sys
 
-
 def main(
     seed, model_name, cont=None, optim_name=None, subset=None, epoch=100, args=None
 ):
@@ -48,6 +47,12 @@ def main(
     patch_splitting(
         dataset=dataset, output_dst="tmp", patch_size=args.width, stride=args.width / 2
     )
+    dir=os.path.join("tmp", "patches")
+    r = os.path.join(dir, "ref")
+    sub = [
+        i.split(".")[0]
+        for i in r
+    ]
     dataset = RENOIR_Dataset(
         img_dir=os.path.join("tmp", "patches"),
         transform=transforms.Compose([standardize(normalize=False), ToTensor()]),
@@ -82,6 +87,7 @@ def main(
         opt.logger.info("LOAD PREVIOUS GTV:", cont)
     if cuda:
         gtv.cuda()
+    #MS_SSIM
     criterion = nn.MSELoss()
     optimizer = optim.SGD(gtv.parameters(), lr=opt.lr, momentum=opt.momentum)
 
@@ -112,7 +118,7 @@ def main(
             # forward + backward + optimize
             # outputs = gtv.forward_approx(inputs, debug=0)
             outputs = gtv(inputs, debug=0)
-            loss = criterion(outputs, labels)
+            loss = 1 - criterion(outputs, labels)
 
             loss.backward()
             torch.nn.utils.clip_grad_norm_(gtv.parameters(), 5e1)
@@ -213,7 +219,6 @@ def main(
     ax.plot(ma_vec)
     ax.set(ylim=[0, ax.get_ylim()[1] * 1.05])
     fig.savefig("loss.png")
-
 
 opt = OPT(
     batch_size=50,
