@@ -12,7 +12,7 @@ from dgtv.dgtv import *
 import pickle
 import logging
 import sys
-
+import pytorch_msssim
 
 def main(
     seed, model_name, cont=None, optim_name=None, subset=None, epoch=100, args=None
@@ -48,10 +48,16 @@ def main(
     patch_splitting(
         dataset=dataset, output_dst="tmp", patch_size=args.width, stride=args.width / 2
     )
+    dir=os.path.join("tmp", "patches")
+    r = os.path.join(dir, "ref")
+    sub = [
+        i.split(".")[0]
+        for i in r
+    ]
     dataset = RENOIR_Dataset(
         img_dir=os.path.join("tmp", "patches"),
         transform=transforms.Compose([standardize(normalize=False), ToTensor()]),
-        subset=subset,
+        subset=sub,
     )
 
     dataloader = DataLoader(
@@ -82,7 +88,8 @@ def main(
         opt.logger.info("LOAD PREVIOUS GTV:", cont)
     if cuda:
         gtv.cuda()
-    criterion = nn.MSELoss()
+    #MS_SSIM
+    criterion = pytorch_msssim.SSIM(channel=1)
     optimizer = optim.SGD(gtv.parameters(), lr=opt.lr, momentum=opt.momentum)
 
     if cont:
@@ -112,7 +119,7 @@ def main(
             # forward + backward + optimize
             # outputs = gtv.forward_approx(inputs, debug=0)
             outputs = gtv(inputs, debug=0)
-            loss = criterion(outputs, labels)
+            loss = 1 - criterion(outputs, labels)
 
             loss.backward()
             torch.nn.utils.clip_grad_norm_(gtv.parameters(), 5e1)
@@ -123,9 +130,14 @@ def main(
             if epoch == 0 and (i + 1) % 80 == 0:
                 with torch.no_grad():
                     histW = gtv(inputs, debug=1)
+                    try:
+                        from skimage.metrics import structural_similarity as compare_ssim
+                    except Exception:
+                        from skimage.measure import compare_ssim
+                    (score, diff) = compare_ssim(histW[:,:,0], labels[:,:,0], full=True)
                     opt.logger.info(
                         "\tLOSS: {0:.8f}".format(
-                            (histW - labels).square().mean().item()
+                            score
                         )
                     )
                 if opt.ver:  # experimental version
@@ -163,8 +175,9 @@ def main(
         if ((epoch + 1) % 1 == 0) or (epoch + 1) == total_epoch:
             with torch.no_grad():
                 histW = gtv(inputs, debug=1)
+                (score, diff) = compare_ssim(histW[:,:,0], labels[:,:,0], full=True)
                 opt.logger.info(
-                    "\tLOSS: {0:.8f}".format((histW - labels).square().mean().item())
+                    "\tLOSS: {0:.8f}".format(score)
                 )
             if opt.ver:  # experimental version
                 opt.logger.info(
@@ -213,7 +226,6 @@ def main(
     ax.plot(ma_vec)
     ax.set(ylim=[0, ax.get_ylim()[1] * 1.05])
     fig.savefig("loss.png")
-
 
 opt = OPT(
     batch_size=50,
@@ -283,7 +295,7 @@ if __name__ == "__main__":
         model_name=args.model,
         cont=cont,
         epoch=int(args.epoch),
-        subset=['2','3','5','6','8','9','11','12','14','15','17','18','20','21','23','24','26','27','29','30','32','33'],
+        subset=['1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16'],
         args=args,
     )
 
