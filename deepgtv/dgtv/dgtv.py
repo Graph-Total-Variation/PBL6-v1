@@ -379,7 +379,7 @@ class GTV(nn.Module):
         s = self.weight_sigma
         if self.opt.legacy:
             u = self.cnnu.forward(xf)
-            u = u.unsqueeze(1).unsqueeze(1)
+            # u = u.unsqueeze(1).unsqueeze(1)
         else:
             u=self.uu.forward()
         u_max = self.opt.u_max
@@ -480,7 +480,7 @@ class GTV(nn.Module):
             P = self.forward(P)
         return P
 
-    def qpsolve(self, L, u, y, Im, channels=3):
+    def qpsolve(self, L, u, y, Im, channels=1):
         """
         Solve equation (2) using (6)
         """
