@@ -31,13 +31,14 @@ def main(
     SAVEPATH = PATH.split(".")[-1]
     SAVEDIR = "".join(PATH.split(".")[:-1]) + "_"
     batch_size = opt.batch_size
-    if not subset:
+    if subset:
         _subset = ["10", "1", "7", "8", "9"]
         # _subset = ["1", "3", "5", "7", "9"]
         opt.logger.info("Train: {0}".format(_subset))
         subset = [i + "_" for i in _subset]
     else:
-        subset = [i + "_" for i in subset]
+        subset = [i.split(".")[0] + "_" for i in os.listdir(os.path.join(opt.train,"ref"))]
+        opt.logger.info("Train: {0}".format(subset))
     dataset = RENOIR_Dataset(
         img_dir=os.path.join(opt.train),
         transform=transforms.Compose([standardize(normalize=False), ToTensor()]),
@@ -47,16 +48,10 @@ def main(
     patch_splitting(
         dataset=dataset, output_dst="tmp", patch_size=args.width, stride=args.width / 2
     )
-    dir=os.path.join("tmp", "patches")
-    r = os.path.join(dir, "ref")
-    sub = [
-        i.split(".")[0]
-        for i in r
-    ]
     dataset = RENOIR_Dataset(
         img_dir=os.path.join("tmp", "patches"),
         transform=transforms.Compose([standardize(normalize=False), ToTensor()]),
-        subset=[i.split(".")[0] + "_" for  i in os.listdir(os.path.join("tmp","patches/ref"))],
+        subset=subset,
     )
 
     dataloader = DataLoader(
@@ -118,7 +113,7 @@ def main(
             # forward + backward + optimize
             # outputs = gtv.forward_approx(inputs, debug=0)
             outputs = gtv(inputs, debug=0)
-            loss = 1 - criterion(outputs, labels)
+            loss = criterion(outputs, labels)
 
             loss.backward()
             torch.nn.utils.clip_grad_norm_(gtv.parameters(), 5e1)
@@ -288,7 +283,7 @@ if __name__ == "__main__":
         model_name=args.model,
         cont=cont,
         epoch=int(args.epoch),
-        subset=['1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16'],
+        subset=None,
         args=args,
     )
 

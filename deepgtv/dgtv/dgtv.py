@@ -125,19 +125,6 @@ class RENOIR_Dataset(Dataset):
             for i in self.rimg_name
             if i.split(".")[-1].lower() in ["jpeg", "jpg", "png", "bmp", "tif"]
         ]
-
-        if self.subset:
-            nimg_name = list()
-            rimg_name = list()
-            for i in range(len(self.nimg_name)):
-                for j in self.subset:
-                    if j in self.nimg_name[i]:
-                        nimg_name.append(self.nimg_name[i])
-                    if j in self.rimg_name[i]:
-                        rimg_name.append(self.rimg_name[i])
-            self.nimg_name = sorted(nimg_name)
-            self.rimg_name = sorted(rimg_name)
-
         self.transform = transform
 
     def __len__(self):
