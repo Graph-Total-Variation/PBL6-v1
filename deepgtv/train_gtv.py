@@ -12,6 +12,7 @@ from dgtv.dgtv import *
 import pickle
 import logging
 import sys
+from pytorch_msssim import ssim, ms_ssim, SSIM, MS_SSIM
 def get_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("-m", "--model", default="GTV.pkl")
@@ -97,7 +98,8 @@ def main(
     if cuda:
         gtv.cuda()
     #MS_SSIM
-    criterion = nn.MSELoss()
+    #criterion = nn.MSELoss()
+    criterion = MS_SSIM(data_range=255, size_average=True, channel=1)
     optimizer = optim.SGD(gtv.parameters(), lr=opt.lr, momentum=opt.momentum)
 
     if cont:
@@ -127,8 +129,8 @@ def main(
             # forward + backward + optimize
             # outputs = gtv.forward_approx(inputs, debug=0)
             outputs = gtv(inputs, debug=0)
-            loss = criterion(outputs, labels)
-
+            #loss = criterion(outputs, labels)
+            loss = 1 - criterion(outputs, labels)
             loss.backward()
             torch.nn.utils.clip_grad_norm_(gtv.parameters(), 5e1)
 
@@ -140,7 +142,8 @@ def main(
                     histW = gtv(inputs, debug=1)
                     opt.logger.info(
                         "\tLOSS: {0:.8f}".format(
-                            (histW - labels).square().mean().item()
+                            #(histW - labels).square().mean().item()
+                            ssim(histW, labels).item()
                         )
                     )
                 if opt.ver:  # experimental version
@@ -179,7 +182,10 @@ def main(
             with torch.no_grad():
                 histW = gtv(inputs, debug=1)
                 opt.logger.info(
-                    "\tLOSS: {0:.8f}".format((histW - labels).square().mean().item())
+                    "\tLOSS: {0:.8f}".format(
+                        #(histW - labels).square().mean().item()
+                        ssim(histW, labels).item()
+                        )
                 )
             if opt.ver:  # experimental version
                 opt.logger.info(

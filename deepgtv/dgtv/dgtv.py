@@ -364,7 +364,7 @@ class GTV(nn.Module):
         s = self.weight_sigma
         if self.opt.legacy:
             u = self.cnnu.forward(xf)
-            # u = u.unsqueeze(1).unsqueeze(1)
+            u = u.unsqueeze(1).unsqueeze(1)
         else:
             u=self.uu.forward()
         u_max = self.opt.u_max
