@@ -65,7 +65,7 @@ def main(
     )
     dataset = RENOIR_Dataset(
         img_dir=os.path.join("tmp", "patches"),
-        transform=transforms.Compose([standardize(normalize=False), ToTensor()]),
+        transform=transforms.Compose([standardize(normalize=True), ToTensor()]),
         subset=subset,
     )
 
@@ -98,8 +98,8 @@ def main(
     if cuda:
         gtv.cuda()
     #MS_SSIM
-    #criterion = nn.MSELoss()
-    criterion = SSIM(data_range=255, size_average=True, channel=1)
+    criterion = nn.L1Loss(reduction='mean')
+    #criterion = SSIM(data_range=255, size_average=True, channel=1)
     optimizer = optim.SGD(gtv.parameters(), lr=opt.lr, momentum=opt.momentum)
 
     if cont:
@@ -129,8 +129,8 @@ def main(
             # forward + backward + optimize
             # outputs = gtv.forward_approx(inputs, debug=0)
             outputs = gtv(inputs, debug=0)
-            #loss = criterion(outputs, labels)
-            loss = 1 - criterion(outputs, labels)
+            loss = criterion(outputs, labels)
+            #loss = 1 - criterion(outputs, labels)
             loss.backward()
             torch.nn.utils.clip_grad_norm_(gtv.parameters(), 5e1)
 
@@ -142,8 +142,9 @@ def main(
                     histW = gtv(inputs, debug=1)
                     opt.logger.info(
                         "\tLOSS: {0:.8f}".format(
+                            torch.abs(histW - labels).mean().item()
                             #(histW - labels).square().mean().item()
-                            ssim(histW, labels).item()
+                            #ssim(histW, labels).item()
                         )
                     )
                 if opt.ver:  # experimental version
@@ -183,8 +184,9 @@ def main(
                 histW = gtv(inputs, debug=1)
                 opt.logger.info(
                     "\tLOSS: {0:.8f}".format(
+                        torch.abs(histW - labels).mean().item()
                         #(histW - labels).square().mean().item()
-                        ssim(histW, labels).item()
+                        #ssim(histW, labels).item()
                         )
                 )
             if opt.ver:  # experimental version
