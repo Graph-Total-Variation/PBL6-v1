@@ -99,7 +99,7 @@ def main(
         gtv.cuda()
     #MS_SSIM
     #criterion = nn.MSELoss()
-    criterion = MS_SSIM(data_range=255, size_average=True, channel=1)
+    criterion = SSIM(data_range=255, size_average=True, channel=1)
     optimizer = optim.SGD(gtv.parameters(), lr=opt.lr, momentum=opt.momentum)
 
     if cont:
