@@ -8,7 +8,7 @@ from torch.utils.data import DataLoader
 import torchvision.transforms as transforms
 import torch.optim as optim
 import matplotlib.pyplot as plt
-from dgtv.dgtv import *
+from dgtv.mydgtv import *
 import pickle
 import logging
 import sys
@@ -82,7 +82,10 @@ def main(
         opt.logger.info("LOAD PREVIOUS GTV:", cont)
     if cuda:
         gtv.cuda()
-    criterion = nn.MSELoss()
+
+    # criterion = nn.MSELoss()
+    criterion = TVLoss(TVLoss_weight=1)  # Chọn trọng số phù hợp cho TVLoss
+
     optimizer = optim.SGD(gtv.parameters(), lr=opt.lr, momentum=opt.momentum)
 
     if cont:
