@@ -8,7 +8,7 @@ from torch.utils.data import DataLoader
 import torchvision.transforms as transforms
 import torch.optim as optim
 import matplotlib.pyplot as plt
-from dgtv.mydgtv import *
+from dgtv.my_dgtv import *
 import pickle
 import logging
 import sys
@@ -286,6 +286,7 @@ if __name__ == "__main__":
         model_name=args.model,
         cont=cont,
         epoch=int(args.epoch),
+        # subset=['1'],
         subset=['1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16'],
         args=args,
     )
