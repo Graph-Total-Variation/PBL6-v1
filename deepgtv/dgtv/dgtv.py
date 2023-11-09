@@ -5,6 +5,7 @@ import numpy as np
 import os
 import cv2
 import torch.nn as nn
+from sklearn.neighbors import NearestNeighbors
 
 from torchvision.utils import save_image
 from torch.utils.data import Dataset, DataLoader
@@ -244,6 +245,19 @@ def connected_adjacency(image, connect=8, patch_size=(1, 1)):
         d4 = d2[1:-1]
         upper_diags = ss.diags([d1, d2, d3, d4], [1, c - 1, c, c + 1])
         return upper_diags + upper_diags.T
+    elif connect == "KNN":
+        data = np.argwhere(image)
+        k = 8
+        if len(data) < k:
+            k = len(data)
+        knn = NearestNeighbors(n_neighbors=k, metric="euclidean")
+        knn.fit(data)
+        adjacency_matrix = np.zeros((len(data), len(data)))
+        for i in range(len(data)):
+            _, indices = knn.kneighbors([data[i]], n_neighbors=k)
+            for j in indices[0]:
+                adjacency_matrix[i, j] = 1
+        return adjacency_matrix
 
 
 def weights_init_normal(m):
