@@ -63,7 +63,7 @@ class cnnu(nn.Module):
             nn.MaxPool2d(kernel_size=2, stride=2, ceil_mode=True),
             nn.Conv2d(32, 32, kernel_size=3, stride=1, padding=1),
             nn.LeakyReLU(0.05),
-            # nn.MaxPool2d(kernel_size=2, stride=2, ceil_mode=True),
+            nn.MaxPool2d(kernel_size=2, stride=2, ceil_mode=True),
             # nn.Conv2d(32, 32, kernel_size=3, stride=1, padding=1),
             # nn.LeakyReLU(0.05),
             # nn.MaxPool2d(kernel_size=2, stride=2, ceil_mode=True),
@@ -330,7 +330,7 @@ class GTV(nn.Module):
 
     def __init__(
         self,
-        width=36,
+        width=16,
         prox_iter=5,
         u_min=1e-3,
         u_max=1,
@@ -395,7 +395,7 @@ class GTV(nn.Module):
             self.opt.H.matmul(E.view(E.shape[0], E.shape[1], self.opt.width ** 2, 1))
             ** 2
         )
-
+        
         w = torch.exp(-(Fs.sum(axis=1)) / (s ** 2))
         if debug:
             s = f"Sample WEIGHT SUM: {w[0, :, :].sum().item():.4f} || Mean Processed u: {u.mean().item():.4f}"
@@ -758,13 +758,13 @@ class DeepGTV(nn.Module):
         return P
 
 
-def supporting_matrix(opt):
+def supporting_matrix(img, opt):
     dtype = opt.dtype
     cuda = opt.cuda
     width = opt.width
 
-    pixel_indices = [i for i in range(width * width)]
-    pixel_indices = np.reshape(pixel_indices, (width, width))
+    #pixel_indices = [i for i in range(width * width)]
+    pixel_indices = np.reshape(img, (width, width))
     A = connected_adjacency(pixel_indices, connect=opt.connectivity)
     A_pair = np.asarray(np.where(A.toarray() == 1)).T
     A_pair = np.unique(np.sort(A_pair, axis=1), axis=0)

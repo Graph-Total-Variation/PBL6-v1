@@ -12,7 +12,7 @@ from dgtv.dgtv import *
 import pickle
 import logging
 import sys
-from pytorch_msssim import ssim, ms_ssim, SSIM, MS_SSIM
+# from pytorch_msssim import ssim, ms_ssim, SSIM, MS_SSIM
 def get_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("-m", "--model", default="GTV.pkl")
@@ -23,11 +23,18 @@ def get_args():
     parser.add_argument("--umax", default=1000, type=float)
     parser.add_argument("--umin", default=0.001, type=float)
     parser.add_argument("--seed", default=0, type=float)
-    parser.add_argument("--width", default=36, type=int)
+    parser.add_argument("--width", default=16, type=int)
     parser.add_argument("--train", default="gauss_batch")
     
     args = parser.parse_args()
     return args
+class RMSLELoss(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.mse = nn.MSELoss(reduction='mean')
+        
+    def forward(self, pred, actual):
+        return torch.sqrt(self.mse(torch.log(pred + 1), torch.log(actual + 1)))
 def main(
     seed, model_name, cont=None, optim_name=None, subset=None, epoch=100, args=None
 ):
@@ -78,7 +85,7 @@ def main(
         drop_last=True,
     )
 
-    supporting_matrix(opt)
+    #supporting_matrix(opt)
     total_epoch = epoch
     opt.logger.info("Dataset: {0}".format(len(dataset)))
     gtv = GTV(
@@ -98,7 +105,7 @@ def main(
     if cuda:
         gtv.cuda()
     #MS_SSIM
-    criterion = nn.L1Loss(reduction='mean')
+    criterion = RMSLELoss()
     #criterion = SSIM(data_range=255, size_average=True, channel=1)
     optimizer = optim.SGD(gtv.parameters(), lr=opt.lr, momentum=opt.momentum)
 
@@ -142,7 +149,8 @@ def main(
                     histW = gtv(inputs, debug=1)
                     opt.logger.info(
                         "\tLOSS: {0:.8f}".format(
-                            torch.abs(histW - labels).mean().item()
+                            torch.sqrt(torch.log(histW + 1), torch.log(labels + 1).square().mean()).item()
+                            #torch.abs(histW - labels).mean().item()
                             #(histW - labels).square().mean().item()
                             #ssim(histW, labels).item()
                         )
@@ -184,7 +192,8 @@ def main(
                 histW = gtv(inputs, debug=1)
                 opt.logger.info(
                     "\tLOSS: {0:.8f}".format(
-                        torch.abs(histW - labels).mean().item()
+                        torch.sqrt(torch.log(histW + 1), torch.log(labels + 1).square().mean()).item()
+                        #torch.abs(histW - labels).mean().item()
                         #(histW - labels).square().mean().item()
                         #ssim(histW, labels).item()
                         )
@@ -246,6 +255,7 @@ opt = OPT(
     u_min=50,
     cuda=True if torch.cuda.is_available() else False,
 )
+
 # batch_size = 50, admm_iter=4, prox_iter=3, delta=.1, channels=3, eta=.3, u=50, lr=8e-6, momentum=0.9, u_max=65, u_min=50)
 if __name__ == "__main__":
     args = get_args()
