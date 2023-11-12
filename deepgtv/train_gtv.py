@@ -85,7 +85,7 @@ def main(
         drop_last=True,
     )
 
-    #supporting_matrix(opt)
+    supporting_matrix(opt)
     total_epoch = epoch
     opt.logger.info("Dataset: {0}".format(len(dataset)))
     gtv = GTV(

@@ -758,13 +758,13 @@ class DeepGTV(nn.Module):
         return P
 
 
-def supporting_matrix(img, opt):
+def supporting_matrix(opt):
     dtype = opt.dtype
     cuda = opt.cuda
     width = opt.width
 
-    #pixel_indices = [i for i in range(width * width)]
-    pixel_indices = np.reshape(img, (width, width))
+    pixel_indices = [i for i in range(width * width)]
+    pixel_indices = np.reshape(pixel_indices, (width, width))
     A = connected_adjacency(pixel_indices, connect=opt.connectivity)
     A_pair = np.asarray(np.where(A.toarray() == 1)).T
     A_pair = np.unique(np.sort(A_pair, axis=1), axis=0)
