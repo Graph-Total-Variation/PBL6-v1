@@ -84,8 +84,8 @@ def main(
     if cuda:
         gtv.cuda()
 
-    # criterion = nn.MSELoss()
-    criterion = TVLoss(TVLoss_weight=1)  # Chọn trọng số phù hợp cho TVLoss
+    criterion = nn.MSELoss()
+    criterion1 = TVLoss(TVLoss_weight=1)  # Chọn trọng số phù hợp cho TVLoss
 
     optimizer = optim.SGD(gtv.parameters(), lr=opt.lr, momentum=opt.momentum)
 
@@ -116,7 +116,10 @@ def main(
             # forward + backward + optimize
             # outputs = gtv.forward_approx(inputs, debug=0)
             outputs = gtv(inputs, debug=0)
-            loss = criterion(outputs, labels)
+            loss1 = criterion1(outputs)
+            loss2 = criterion(outputs, labels)
+            alpha = 0.1
+            loss = loss2 + alpha * loss1 
 
             loss.backward()
             torch.nn.utils.clip_grad_norm_(gtv.parameters(), 5e1)

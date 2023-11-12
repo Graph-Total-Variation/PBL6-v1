@@ -341,6 +341,8 @@ class TVLoss(nn.Module):
     def _tensor_size(self, t):
         return t.size()[1] * t.size()[2] * t.size()[3]
 
+
+
 class GTV(nn.Module):
     """
     GTV network
