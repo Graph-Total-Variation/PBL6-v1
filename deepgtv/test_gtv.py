@@ -209,7 +209,7 @@ def main_eva(
         opt.logger.info(torch.cuda.get_device_name(0))
     else:
         dtype = torch.FloatTensor
-    gtv = GTV(width=6, cuda=cuda, opt=opt)  # just initialize to load the trained model, no need to change
+    gtv = GTV(width=16, cuda=cuda, opt=opt)  # just initialize to load the trained model, no need to change
     PATH = model_name
     device = torch.device("cuda") if cuda else torch.device("cpu")
     gtv.load_state_dict(torch.load(PATH, map_location=device))
@@ -460,11 +460,19 @@ if __name__ == "__main__":
     supporting_matrix(opt)
     logger.info("GTV evaluation")
     logger.info(" ".join(sys.argv))
+    if args.image_path_train:
+        trainset = [i.split(".")[0] for i in os.listdir(os.path.join(args.image_path_train,"ref"))]
+    else:
+        trainset = None
+    if args.image_path_test:
+        testset = [i.split(".")[0] for i in os.listdir(os.path.join(args.image_path_test,"noisy"))]
+    else:
+        testset = None
     _, _ = main_eva(
         seed="gauss",
         model_name=args.model,
-        trainset=[i.split(".")[0] for i in os.listdir(os.path.join(args.image_path_train,"ref"))],
-        testset=[i.split(".")[0] for i in os.listdir(os.path.join(args.image_path_test,"ref"))],
+        trainset=trainset,
+        testset=testset,
         imgw=args.width,
         verbose=1,
         image_path_train=args.image_path_train,

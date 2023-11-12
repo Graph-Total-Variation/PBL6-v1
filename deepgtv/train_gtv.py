@@ -105,7 +105,7 @@ def main(
     if cuda:
         gtv.cuda()
     #MS_SSIM
-    criterion = RMSLELoss()
+    criterion = nn.MSELoss()
     #criterion = SSIM(data_range=255, size_average=True, channel=1)
     optimizer = optim.SGD(gtv.parameters(), lr=opt.lr, momentum=opt.momentum)
 
@@ -149,9 +149,9 @@ def main(
                     histW = gtv(inputs, debug=1)
                     opt.logger.info(
                         "\tLOSS: {0:.8f}".format(
-                            torch.sqrt(torch.log(histW + 1), torch.log(labels + 1).square().mean()).item()
+                            #torch.sqrt((torch.log(histW + 1) - torch.log(labels + 1)).square().mean()).item()
                             #torch.abs(histW - labels).mean().item()
-                            #(histW - labels).square().mean().item()
+                            (histW - labels).square().mean().item()
                             #ssim(histW, labels).item()
                         )
                     )
@@ -192,9 +192,9 @@ def main(
                 histW = gtv(inputs, debug=1)
                 opt.logger.info(
                     "\tLOSS: {0:.8f}".format(
-                        torch.sqrt(torch.log(histW + 1), torch.log(labels + 1).square().mean()).item()
+                        #torch.sqrt(torch.log(histW + 1) - torch.log(labels + 1).square().mean()).item()
                         #torch.abs(histW - labels).mean().item()
-                        #(histW - labels).square().mean().item()
+                        (histW - labels).square().mean().item()
                         #ssim(histW, labels).item()
                         )
                 )
