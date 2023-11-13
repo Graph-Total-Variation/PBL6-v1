@@ -84,8 +84,9 @@ def main(
     if cuda:
         gtv.cuda()
 
-    criterion = nn.MSELoss()
-    criterion1 = TVLoss(TVLoss_weight=1)  # Chọn trọng số phù hợp cho TVLoss
+    # criterion = nn.MSELoss()
+    criterion = nn.SmoothL1Loss(delta = 1)
+    criterion1 = TVLoss(TVLoss_weight=0.1)  # Chọn trọng số phù hợp cho TVLoss
 
     optimizer = optim.SGD(gtv.parameters(), lr=opt.lr, momentum=opt.momentum)
 
