@@ -72,7 +72,7 @@ def main(
     )
     dataset = RENOIR_Dataset(
         img_dir=os.path.join("tmp", "patches"),
-        transform=transforms.Compose([standardize(normalize=True), ToTensor()]),
+        transform=transforms.Compose([standardize(normalize=False), ToTensor()]),
         subset=subset,
     )
 
