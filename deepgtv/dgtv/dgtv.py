@@ -341,6 +341,23 @@ class TVLoss(nn.Module):
     def _tensor_size(self, t):
         return t.size()[1] * t.size()[2] * t.size()[3]
 
+class CustomLoss(nn.Module):
+    def __init__(self):
+        super(CustomLoss, self).__init__()
+        # self.mse_weight = mse_weight
+        # self.l1_weight = l1_weight
+        # self.tv_weight = tv_weight
+        # self.tv_loss = tv_loss
+
+    def forward(self, predicted, target):
+        mse_loss = nn.MSELoss(reduction='mean')
+        l1_loss = nn.L1Loss()
+        tv_loss = TVLoss(TVLoss_weight=1)
+
+        total_loss = mse_loss(predicted,target) + l1_loss(predicted,target) + 0.1 * tv_loss(predicted)
+        
+        return total_loss
+
 
 
 class GTV(nn.Module):

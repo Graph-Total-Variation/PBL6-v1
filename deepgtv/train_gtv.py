@@ -15,6 +15,9 @@ import logging
 import sys
 
 
+
+
+
 def main(
     seed, model_name, cont=None, optim_name=None, subset=None, epoch=100, args=None
 ):
@@ -83,9 +86,9 @@ def main(
         opt.logger.info("LOAD PREVIOUS GTV:", cont)
     if cuda:
         gtv.cuda()
-
+    
     # criterion = nn.MSELoss()
-    criterion = nn.SmoothL1Loss(delattr = 1)
+    criterion = CustomLoss()
     criterion1 = TVLoss(TVLoss_weight=0.1)  # Chọn trọng số phù hợp cho TVLoss
 
     optimizer = optim.SGD(gtv.parameters(), lr=opt.lr, momentum=opt.momentum)
@@ -117,10 +120,10 @@ def main(
             # forward + backward + optimize
             # outputs = gtv.forward_approx(inputs, debug=0)
             outputs = gtv(inputs, debug=0)
+            loss = criterion(outputs, labels)
             loss1 = criterion1(outputs)
-            loss2 = criterion(outputs, labels)
             alpha = 0.1
-            loss = loss2 + alpha * loss1 
+            # loss = loss + alpha * loss1 
 
             loss.backward()
             torch.nn.utils.clip_grad_norm_(gtv.parameters(), 5e1)
