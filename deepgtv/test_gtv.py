@@ -47,7 +47,7 @@ def denoise(
     argref,
     normalize=False,
     stride=36,
-    width=324,
+    width=128,
     prefix="_",
     verbose=0,
     opt=None,
