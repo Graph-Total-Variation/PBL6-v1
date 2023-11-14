@@ -89,7 +89,7 @@ def main(
     
     # criterion = nn.MSELoss()
     criterion = CustomLoss()
-    criterion1 = TVLoss(TVLoss_weight=0.1)  # Chọn trọng số phù hợp cho TVLoss
+    # criterion1 = TVLoss(TVLoss_weight=0.1)  
 
     optimizer = optim.SGD(gtv.parameters(), lr=opt.lr, momentum=opt.momentum)
 

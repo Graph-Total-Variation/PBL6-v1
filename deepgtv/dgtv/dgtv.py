@@ -342,12 +342,9 @@ class TVLoss(nn.Module):
         return t.size()[1] * t.size()[2] * t.size()[3]
 
 class CustomLoss(nn.Module):
+    #custom loss nay chi giup tang ssim va psnr len mot chut so voi mse
     def __init__(self):
         super(CustomLoss, self).__init__()
-        # self.mse_weight = mse_weight
-        # self.l1_weight = l1_weight
-        # self.tv_weight = tv_weight
-        # self.tv_loss = tv_loss
 
     def forward(self, predicted, target):
         mse_loss = nn.MSELoss(reduction='mean')

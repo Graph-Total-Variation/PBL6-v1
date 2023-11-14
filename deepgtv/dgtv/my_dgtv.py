@@ -5,6 +5,7 @@ import numpy as np
 import os
 import cv2
 import torch.nn as nn
+from sklearn.neighbors import NearestNeighbors
 
 from torchvision.utils import save_image
 from torch.utils.data import Dataset, DataLoader
@@ -42,15 +43,12 @@ class cnnf_2(nn.Module):
         out = self.layer(x)
         return out
 
-
 class uu(nn.Module):
     def __init__(self):
-        super(uu, self).__init__()
+        super(uu,self).__init__()
         self.u = torch.nn.Parameter(torch.rand(1), requires_grad=True)
-
     def forward(self):
         return self.u
-
 
 class cnnu(nn.Module):
     """
@@ -60,17 +58,15 @@ class cnnu(nn.Module):
     def __init__(self, u_min=1e-3, opt=None):
         super(cnnu, self).__init__()
         self.layer = nn.Sequential(
-            nn.Conv2d(opt.channels, 32, kernel_size=3, stride=2, padding=1),
-            nn.LeakyReLU(0.05),
-            nn.Conv2d(32, 32, kernel_size=3, stride=1, padding=1),
+            nn.Conv2d(opt.channels, 32, kernel_size=3, stride=1, padding=1),
             nn.LeakyReLU(0.05),
             nn.MaxPool2d(kernel_size=2, stride=2, ceil_mode=True),
             nn.Conv2d(32, 32, kernel_size=3, stride=1, padding=1),
             nn.LeakyReLU(0.05),
             nn.MaxPool2d(kernel_size=2, stride=2, ceil_mode=True),
-            nn.Conv2d(32, 32, kernel_size=3, stride=1, padding=1),
-            nn.LeakyReLU(0.05),
-            nn.MaxPool2d(kernel_size=2, stride=2, ceil_mode=True),
+            # nn.Conv2d(32, 32, kernel_size=3, stride=1, padding=1),
+            # nn.LeakyReLU(0.05),
+            # nn.MaxPool2d(kernel_size=2, stride=2, ceil_mode=True),
         )
 
         self.opt = opt
@@ -102,7 +98,6 @@ class cnnu(nn.Module):
 
         return int(m)
 
-
 class RENOIR_Dataset(Dataset):
     """
     Dataset loader
@@ -131,19 +126,6 @@ class RENOIR_Dataset(Dataset):
             for i in self.rimg_name
             if i.split(".")[-1].lower() in ["jpeg", "jpg", "png", "bmp", "tif"]
         ]
-
-        if self.subset:
-            nimg_name = list()
-            rimg_name = list()
-            for i in range(len(self.nimg_name)):
-                for j in self.subset:
-                    if j in self.nimg_name[i]:
-                        nimg_name.append(self.nimg_name[i])
-                        # if j in self.rimg_name[i]:
-                        rimg_name.append(self.rimg_name[i])
-            self.nimg_name = sorted(nimg_name)
-            self.rimg_name = sorted(rimg_name)
-
         self.transform = transform
 
     def __len__(self):
@@ -152,7 +134,7 @@ class RENOIR_Dataset(Dataset):
     def __getitem__(self, idx):
         if torch.is_tensor(idx):
             idx = idx.tolist()
-        uid = np.random.randint(0, 8)  # augment type
+        uid = np.random.randint(0, 8) # augment type
         # uid = 0
         nimg_name = os.path.join(self.npath, self.nimg_name[idx])
         nimg = cv2.imread(nimg_name)
@@ -215,7 +197,7 @@ class ToTensor(object):
         nimg = nimg.transpose((2, 0, 1))
         rimg = rimg.transpose((2, 0, 1))
         return {
-            "nimg": torch.from_numpy(nimg),
+            "nimg": torch.from_numpy(nimg), 
             "rimg": torch.from_numpy(rimg)
         }
 
@@ -263,6 +245,19 @@ def connected_adjacency(image, connect=8, patch_size=(1, 1)):
         d4 = d2[1:-1]
         upper_diags = ss.diags([d1, d2, d3, d4], [1, c - 1, c, c + 1])
         return upper_diags + upper_diags.T
+    elif connect == "KNN":
+        data = np.argwhere(image)
+        k = 8
+        if len(data) < k:
+            k = len(data)
+        knn = NearestNeighbors(n_neighbors=k, metric="euclidean")
+        knn.fit(data)
+        adjacency_matrix = np.zeros((len(data), len(data)))
+        for i in range(len(data)):
+            _, indices = knn.kneighbors([data[i]], n_neighbors=k)
+            for j in indices[0]:
+                adjacency_matrix[i, j] = 1
+        return adjacency_matrix
 
 
 def weights_init_normal(m):
@@ -273,14 +268,13 @@ def weights_init_normal(m):
     if classname.find("Conv") != -1:
         torch.nn.init.normal_(m.weight.data, 0.0, 0.02)
 
-
 class OPT:
     def __init__(
         self,
         batch_size=100,
-        width=36,
+        width=16,
         connectivity="8",
-        channels=3,
+        channels=1,
         u_max=100,
         u_min=10,
         lr=1e-4,
@@ -328,24 +322,7 @@ class OPT:
             )
         )
 
-class TVLoss(nn.Module):
-    def __init__(self,TVLoss_weight=1):
-        super(TVLoss,self).__init__()
-        self.TVLoss_weight = TVLoss_weight
 
-    def forward(self,x):
-        batch_size = x.size()[0]
-        h_x = x.size()[2]
-        w_x = x.size()[3]
-        count_h = self._tensor_size(x[:,:,1:,:])
-        count_w = self._tensor_size(x[:,:,:,1:])
-        h_tv = torch.pow((x[:,:,1:,:]-x[:,:,:h_x-1,:]),2).sum()
-        w_tv = torch.pow((x[:,:,:,1:]-x[:,:,:,:w_x-1]),2).sum()
-        return self.TVLoss_weight*2*(h_tv/count_h+w_tv/count_w)/batch_size
-
-    def _tensor_size(self,t):
-        return t.size()[1]*t.size()[2]*t.size()[3]
-    
 class GTV(nn.Module):
     """
     GTV network
@@ -353,7 +330,7 @@ class GTV(nn.Module):
 
     def __init__(
         self,
-        width=36,
+        width=16,
         prox_iter=5,
         u_min=1e-3,
         u_max=1,
@@ -403,33 +380,27 @@ class GTV(nn.Module):
             u = self.cnnu.forward(xf)
             u = u.unsqueeze(1).unsqueeze(1)
         else:
-            u = self.uu.forward()
+            u=self.uu.forward()
         u_max = self.opt.u_max
         u_min = self.opt.u_min
         if debug:
             self.u = u.clone()
         u = torch.clamp(u, u_min, u_max)
 
-        z = self.opt.H.matmul(
-            xf.view(xf.shape[0], xf.shape[1], self.opt.width ** 2, 1))
+        z = self.opt.H.matmul(xf.view(xf.shape[0], xf.shape[1], self.opt.width ** 2, 1))
 
         ###################
         E = self.cnnf.forward(xf)
         Fs = (
-            self.opt.H.matmul(
-                E.view(E.shape[0], E.shape[1], self.opt.width ** 2, 1))
+            self.opt.H.matmul(E.view(E.shape[0], E.shape[1], self.opt.width ** 2, 1))
             ** 2
         )
-
-        # w = torch.exp(-(Fs.sum(axis=1)) / (s ** 2))
-        if s:
-            w = torch.exp(-((Fs.sum(axis=1))**2) / (s ** 2))
-        else:
-            w = 0
+        
+        w = torch.exp(-(Fs.sum(axis=1)) / (s ** 2))
         if debug:
             s = f"Sample WEIGHT SUM: {w[0, :, :].sum().item():.4f} || Mean Processed u: {u.mean().item():.4f}"
             self.logger.info(s)
-
+            
         w = w.unsqueeze(1).repeat(1, self.opt.channels, 1, 1)
 
         W = self.base_W.clone()
@@ -480,8 +451,7 @@ class GTV(nn.Module):
             L1 = L @ self.support_L
             L = torch.diag_embed(L1.squeeze(-1)) - L
 
-            xhat = self.qpsolve(
-                L, u, y, self.support_identity, self.opt.channels)
+            xhat = self.qpsolve(L, u, y, self.support_identity, self.opt.channels)
             return xhat
         xhat = glr(xhat, w, u)
         xhat = glr(xhat, w, u)
@@ -509,7 +479,7 @@ class GTV(nn.Module):
             P = self.forward(P)
         return P
 
-    def qpsolve(self, L, u, y, Im, channels=3):
+    def qpsolve(self, L, u, y, Im, channels=1):
         """
         Solve equation (2) using (6)
         """
@@ -517,7 +487,7 @@ class GTV(nn.Module):
         t = torch.inverse(Im + u * L)
 
         return t @ y
-
+    
     def forward_approx(self, xf, debug=False, manual_debug=False):  # gtvapprox
         self.base_W = torch.zeros(
             xf.shape[0], self.opt.channels, self.opt.width ** 2, self.opt.width ** 2
@@ -545,23 +515,17 @@ class GTV(nn.Module):
         # u = u.unsqueeze(1).unsqueeze(1)
         u = u.unsqueeze(1)
 
-        z = self.opt.H.matmul(
-            xf.view(xf.shape[0], xf.shape[1], self.opt.width ** 2, 1))
+        z = self.opt.H.matmul(xf.view(xf.shape[0], xf.shape[1], self.opt.width ** 2, 1))
 
         ###################
         E = self.cnnf.forward(xf)
         if manual_debug:
             return_dict["f"].append(E)
         Fs = (
-            self.opt.H.matmul(
-                E.view(E.shape[0], E.shape[1], self.opt.width ** 2, 1))
+            self.opt.H.matmul(E.view(E.shape[0], E.shape[1], self.opt.width ** 2, 1))
             ** 2
         )
-        if self.weight_sigma:
-            w = torch.exp(-((Fs.sum(axis=1))**2) / (self.weight_sigma ** 2))
-        else:
-            w = 0
-        # w = torch.exp(-(Fs.sum(axis=1)) / (self.weight_sigma ** 2))
+        w = torch.exp(-(Fs.sum(axis=1)) / (self.weight_sigma ** 2))
 
         if manual_debug:
             # return_dict['gtv'].append((z*w).abs().sum())
@@ -661,12 +625,9 @@ class GTV(nn.Module):
             return xhat
 
         if manual_debug:
-            xhat2 = glr(xhat, w, u, debug=manual_debug,
-                        return_dict=return_dict)
-            xhat3 = glr(xhat2, w, u, debug=manual_debug,
-                        return_dict=return_dict)
-            xhat4 = glr(xhat3, w, u, debug=manual_debug,
-                        return_dict=return_dict)
+            xhat2 = glr(xhat, w, u, debug=manual_debug, return_dict=return_dict)
+            xhat3 = glr(xhat2, w, u, debug=manual_debug, return_dict=return_dict)
+            xhat4 = glr(xhat3, w, u, debug=manual_debug, return_dict=return_dict)
             return (
                 xhat4.view(
                     xhat4.shape[0], self.opt.channels, self.opt.width, self.opt.width
@@ -686,20 +647,16 @@ class GTV(nn.Module):
         v, H_M = self.planczos(L, order, dx)
         H_M_eval, H_M_evec = torch.symeig(H_M, eigenvectors=True)
         H_M_eval = torch.clamp(H_M_eval, 0, H_M_eval.max().item())
-        fv = H_M_evec @ torch.diag_embed(f(H_M_eval, u)
-                                         ) @ H_M_evec.permute(0, 1, 3, 2)
-        approx = torch.norm(
-            dx, dim=2).unsqueeze(-1).unsqueeze(-1) * v @ fv @ e1
+        fv = H_M_evec @ torch.diag_embed(f(H_M_eval, u)) @ H_M_evec.permute(0, 1, 3, 2)
+        approx = torch.norm(dx, dim=2).unsqueeze(-1).unsqueeze(-1) * v @ fv @ e1
         return approx
 
     def planczos(self, A, order, x):
         q = x / torch.norm(x, dim=2, keepdim=True)
-        V = torch.zeros(
-            (x.shape[0], x.shape[1], x.shape[2], order), device=self.device)
+        V = torch.zeros((x.shape[0], x.shape[1], x.shape[2], order), device=self.device)
         V[:, :, :, 0] = q
         q = q.unsqueeze(-1)
-        H = torch.zeros(
-            (x.shape[0], x.shape[1], order + 1, order), device=self.device)
+        H = torch.zeros((x.shape[0], x.shape[1], order + 1, order), device=self.device)
         r = A @ q
         H[:, :, 0, 0] = torch.sum(q * r, axis=[-2, -1])
 
@@ -741,10 +698,8 @@ class GTV(nn.Module):
             P = self.forward_approx(P)
         return P
 
-
 def f(x, u=0.5):
     return 1 / (1 + u * x)
-
 
 class DeepGTV(nn.Module):
     """
@@ -761,8 +716,7 @@ class DeepGTV(nn.Module):
         opt=None
     ):
         super(DeepGTV, self).__init__()
-        self.gtv1 = GTV(width=width, u_max=u_max,
-                        u_min=u_min, cuda=cuda, opt=opt,)
+        self.gtv1 = GTV(width=width, u_max=u_max, u_min=u_min, cuda=cuda, opt=opt,)
 
         self.opt = opt
         if cuda:
@@ -790,6 +744,8 @@ class DeepGTV(nn.Module):
         P = self.gtv1.lancz_predict(P)
 
         return P
+
+
 
     def forward(self, sample, debug=False):
         if not debug:
@@ -825,9 +781,9 @@ def supporting_matrix(opt):
         H[e, p[1]] = -1
         A[p[0], p[1]] = 1
 
-    opt.I = I
+    opt.I = I  
     opt.pairs = A_pair
-    opt.H = H
+    opt.H = H 
     opt.connectivity_full = A.requires_grad_(True)
     opt.connectivity_idx = torch.where(A > 0)
 
@@ -836,7 +792,6 @@ def supporting_matrix(opt):
         A_temp[p[1], p[0]] = 1
         A = A_temp
     opt.logger.info("OPT created on cuda: {0} {1}".format(cuda, dtype))
-
 
 def mkdir(d, remove=True):
     try:
@@ -908,28 +863,26 @@ def patch_splitting(dataset, output_dst, patch_size=36, stride=18):
         # Assuming gray_images is your tensor with shape [729, 36, 36]
         for i in range(T1.shape[0]):
             img = T1[i, :, :].cpu().detach().numpy().astype(np.uint8)
-
+            
             # Add a channel dimension at the beginning
             #img = np.expand_dims(img, axis=2)
             # Assuming you want to save grayscale images
             plt.imsave(
-                os.path.join(output_dst_noisy, "{0}_{1}.{2}".format(
-                    img_name, i, img_ext)),
+                os.path.join(output_dst_noisy, "{0}_{1}.{2}".format(img_name, i, img_ext)),
                 img,
                 cmap='gray'  # Specify colormap for grayscale images
             )
-
+            
             total += 1
         for i in range(T2.shape[0]):
             img = T2[i, :, :].cpu().detach().numpy().astype(np.uint8)
-
+            
             # Add a channel dimension at the beginning
             #img = np.expand_dims(img, axis=2)
-
+            
             # Assuming you want to save grayscale images
             plt.imsave(
-                os.path.join(output_dst_ref, "{0}_{1}.{2}".format(
-                    img_name, i, img_ext)),
+                os.path.join(output_dst_ref, "{0}_{1}.{2}".format(img_name, i, img_ext)),
                 img,
                 cmap='gray'  # Specify colormap for grayscale images
             )
