@@ -33,7 +33,7 @@ def get_args():
         "--multi", default=30, type=int, help="# of patches evaluation in parallel"
     )
     parser.add_argument("--opt", default="opt")
-    parser.add_argument("--image_path_train")
+    # parser.add_argument("--image_path_train")
     parser.add_argument("--image_path_test")
     parser.add_argument("--image_path")
     parser.add_argument("--layers", default=1, type=int)
@@ -55,10 +55,10 @@ def denoise(
     args=None,
     logger=None,
 ):
-    try:
-        from skimage.metrics import structural_similarity as compare_ssim
-    except Exception:
-        from skimage.measure import compare_ssim
+    # try:
+    #     from skimage.metrics import structural_similarity as compare_ssim
+    # except Exception:
+    #     from skimage.measure import compare_ssim
 
     sample = cv2.imread(inp)
     if width is None:
@@ -145,9 +145,13 @@ def denoise(
     d = np.minimum(np.maximum(d, 0), 1)
     plt.imsave(opath, d, cmap='gray')
     if argref:
-        mse = ((d - (tref / 255.0)) ** 2).mean() * 255
-        logger.info("MSE: {:.5f}".format(mse))
-        logger.info("Saved {0}".format(opath))
+        d = cv2.imread(opath)
+        d = cv2.cvtColor(d, cv2.COLOR_RGB2GRAY)
+        d = np.expand_dims(d, axis=2)
+    logger.info("Saved {0}".format(opath))
+    #     mse = ((d - (tref / 255.0)) ** 2).mean() * 255
+    #     logger.info("MSE: {:.5f}".format(mse))
+    #     logger.info("Saved {0}".format(opath))
         # return (0, score, 0, psnr2, mse, d)  # psnr, ssim, denoised image
     return d
 
@@ -197,7 +201,7 @@ def main_eva(
         opt.logger.info(torch.cuda.get_device_name(0))
     else:
         dtype = torch.FloatTensor
-    gtv = GTV(width=6, cuda=cuda, opt=opt)  # just initialize to load the trained model, no need to change
+    gtv = GTV(width=36, cuda=cuda, opt=opt)  # just initialize to load the trained model, no need to change
     PATH = model_name
     device = torch.device("cuda") if cuda else torch.device("cpu")
     gtv.load_state_dict(torch.load(PATH, map_location=device))
@@ -205,6 +209,7 @@ def main_eva(
     width = gtv.opt.width
     opt.width = width
     opt = gtv.opt
+
     if image_path_train:
         trainset = [i.split(".")[0] for i in os.listdir(os.path.join(args.image_path_train,"ref"))]
     else: 
@@ -217,7 +222,7 @@ def main_eva(
         seed="gauss",
         model_name=args.model,
         trainset=trainset,
-        testset=testset,
+        testset=["1", "2", "3", "4"],
         imgw=args.width,
         verbose=1,
         image_path_train=args.image_path_train,

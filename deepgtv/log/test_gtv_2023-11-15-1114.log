@@ -1,0 +1,5 @@
+11:14:54 root INFO OPT created on cuda: False <class 'torch.FloatTensor'>
+11:14:54 root INFO GTV evaluation
+11:14:54 root INFO test_gtv.py -w 512 -m model/GTV_19.pkl --stride 9 --multi 200 --image_path_test dataset/Test/Test_10
+11:14:54 root INFO CUDA: False
+11:14:54 root INFO GTV created on cuda: False
