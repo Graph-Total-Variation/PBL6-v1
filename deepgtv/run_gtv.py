@@ -38,7 +38,8 @@ def load_gtv_model(model_path):
     device = torch.device("cuda") if cuda else torch.device("cpu")
     # Load trọng số đã được đào tạo
     gtv.load_state_dict(torch.load(model_path, map_location=device))
-    
+    gtv.cuda()
+
     return gtv
 
 modelgtv = load_gtv_model("model/GTV_13g5.pkl")
@@ -51,7 +52,7 @@ def denoise_image(image_path, model = modelgtv, width=512, stride=9):
         dtype = torch.FloatTensor
     # Đọc ảnh đầu vào
     sample = cv2.imread(image_path)
-    
+    sample.cuda()
     # Resize ảnh đầu vào nếu cần
     if width is not None:
         sample = cv2.resize(sample, (width, width))
