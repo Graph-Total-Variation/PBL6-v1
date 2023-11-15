@@ -84,7 +84,15 @@ opt = OPT(
     u_min=0.0001,
     cuda=True if torch.cuda.is_available() else False
     )
+import logging
+logger = logging.getLogger("root")
+logger.addHandler(logging.StreamHandler(sys.stdout))
+opt.logger = logger
+opt.legacy = True
 
+# Chuẩn bị ma trận hỗ trợ
+supporting_matrix(opt)
+logger.info("GTV evaluation")
 
 def denoise(
     inp,
@@ -98,7 +106,7 @@ def denoise(
     opt=opt,
     approx=False,
     args=None,
-    logger=None,
+    logger=logger
 ):
     try:
         from skimage.metrics import structural_similarity as compare_ssim
@@ -180,6 +188,7 @@ def denoise(
 
     ds = np.array(dummy).copy()
     d = np.minimum(np.maximum(ds, 0), 255)
+
     logger.info("RANGE: {0} - {1}".format(d.min(), d.max()))
     d = d.transpose(1, 2, 0) / 255
     d = d[:,:,0]
@@ -202,6 +211,7 @@ def denoise(
         #(score, diff) = compare_ssim(tref, d, full=True, channel_axis=True)
         (score, diff) = compare_ssim(tref[:,:,0], d[:,:,0], full=True)
         logger.info("SSIM: {:.5f}".format(score))
+
     logger.info("Saved {0}".format(opath))
     if argref:
 
