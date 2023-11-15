@@ -39,6 +39,9 @@ def load_gtv_model(model_path):
     # Load trọng số đã được đào tạo
     gtv.load_state_dict(torch.load(model_path, map_location=device))
     gtv.cuda()
+    width = gtv.opt.width
+    opt.width = width
+    opt = gtv.opt
 
     return gtv
 
