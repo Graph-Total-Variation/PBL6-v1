@@ -94,6 +94,88 @@ opt.legacy = True
 supporting_matrix(opt)
 logger.info("GTV evaluation")
 
+def denoise_image(
+    inp,
+    gtv,
+    stride=9,
+    width=512,
+    prefix="_",
+    verbose=0,
+    opt=opt,
+    approx=False,
+    args=None,
+    logger=logger
+):
+    
+    sample = cv2.imread(inp)
+    if width is None:
+        width = sample.shape[0]
+    else:
+        sample = cv2.resize(sample, (width, width))
+    sample = cv2.cvtColor(sample, cv2.COLOR_RGB2GRAY)
+    sample = np.expand_dims(sample, axis=2)
+    sample = sample.transpose((2, 0, 1))
+    shape = sample.shape
+
+    sample = torch.from_numpy(sample)
+
+    cuda = True if torch.cuda.is_available() else False
+
+    dtype = torch.cuda.FloatTensor if cuda else torch.FloatTensor
+   
+
+    tstart = time.time()
+    T1 = sample
+
+    T1 = torch.nn.functional.pad(T1, (0, stride, 0, stride), mode="constant", value=0)
+    shapex = T1.shape
+    T2 = (
+        torch.from_numpy(T1.detach().numpy().transpose(1, 2, 0))
+        .unfold(0, opt.width, stride)
+        .unfold(1, opt.width, stride)
+    ).type(dtype)
+    T2 = T2.contiguous()
+    
+    # MAX_PATCH = args.multi
+    MAX_PATCH = 50
+    oT2s0 = T2.shape[0]
+    T2 = T2.view(-1, opt.channels, opt.width, opt.width)
+    dummy = torch.zeros(T2.shape).type(dtype)
+    logger.info("{0}".format(T2.shape))
+    with torch.no_grad():
+        for ii, i in enumerate(range(0, T2.shape[0], MAX_PATCH)):
+            P = gtv.predict(
+                T2[i : (i + MAX_PATCH), :, :, :].float().contiguous().type(dtype),
+            )
+            dummy[i : (i + MAX_PATCH)] = P
+    dummy = dummy.view(oT2s0, -1, opt.channels, opt.width, opt.width)
+    dummy = dummy.cpu()
+    if verbose:
+        logger.info("Prediction time: {0}".format(time.time() - tstart))
+    else:
+        logger.info("Prediction time: {0}".format(time.time() - tstart))
+
+    dummy = (
+        patch_merge(dummy, stride=stride, shape=shapex, shapeorg=shape).detach().numpy()
+    )
+
+    ds = np.array(dummy).copy()
+    d = np.minimum(np.maximum(ds, 0), 255)
+
+    logger.info("RANGE: {0} - {1}".format(d.min(), d.max()))
+    d = d.transpose(1, 2, 0) / 255
+    d = d[:,:,0]
+    if 0:
+        opath = args.output
+    else:
+        filename = inp.split("/")[-1]
+        opath = resroot + "/{0}_{1}".format(prefix, filename)
+        opath = opath[:-3] + "png"
+    d = np.minimum(np.maximum(d, 0), 1)
+    plt.imsave(opath, d, cmap='gray')
+
+    return d
+
 def denoise(
     inp,
     gtv,
@@ -200,6 +282,7 @@ def denoise(
         opath = opath[:-3] + "png"
     d = np.minimum(np.maximum(d, 0), 1)
     plt.imsave(opath, d, cmap='gray')
+
     if argref:
         mse = ((d - (tref / 255.0)) ** 2).mean() * 255
         logger.info("MSE: {:.5f}".format(mse))
@@ -212,7 +295,7 @@ def denoise(
         (score, diff) = compare_ssim(tref[:,:,0], d[:,:,0], full=True)
         logger.info("SSIM: {:.5f}".format(score))
 
-    logger.info("Saved {0}".format(opath))
+    # logger.info("Saved {0}".format(opath))
     if argref:
 
         return (0, score, 0, psnr2, mse, d)  # psnr, ssim, denoised image
