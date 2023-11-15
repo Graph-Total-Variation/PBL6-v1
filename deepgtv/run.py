@@ -40,17 +40,62 @@ def get_args():
     parser.add_argument("--row", default=100, type=int)
     args = parser.parse_args()
     return args
+
+def load_gtv_model(model_path):
+    # Tạo đối tượng OPT để cấu hình
+    opt = OPT(
+        batch_size=32,
+        channels=1,
+        lr=1e-4,
+        momentum=0.9,
+        u_max=1000,
+        u_min=0.0001,
+        cuda=True if torch.cuda.is_available() else False
+    )
     
+    # Thiết lập logger
+    import logging
+    logger = logging.getLogger("root")
+    logger.addHandler(logging.StreamHandler(sys.stdout))
+    opt.logger = logger
+    opt.legacy = True
+    
+    # Chuẩn bị ma trận hỗ trợ
+    supporting_matrix(opt)
+    
+    # Tạo đối tượng GTV
+    gtv = GTV(width=36, cuda=opt.cuda, opt=opt)
+    device = torch.device("cuda") if cuda else torch.device("cpu")
+    # Load trọng số đã được đào tạo
+    gtv.load_state_dict(torch.load(model_path, map_location=device))
+    gtv.cuda()
+    # width = gtv.opt.width
+    # opt.width = width
+    # opt = gtv.opt
+
+    return gtv
+ 
+opt = OPT(
+    batch_size=32,
+    channels=1,
+    lr=1e-4,
+    momentum=0.9,
+    u_max=1000,
+    u_min=0.0001,
+    cuda=True if torch.cuda.is_available() else False
+    )
+
+
 def denoise(
     inp,
     gtv,
     argref,
     normalize=False,
     stride=36,
-    width=324,
+    width=512,
     prefix="_",
     verbose=0,
-    opt=None,
+    opt=opt,
     approx=False,
     args=None,
     logger=None,
