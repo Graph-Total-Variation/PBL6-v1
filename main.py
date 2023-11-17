@@ -12,6 +12,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 import csv
 import cv2
+import tempfile
 
 from deepgtv.runcc import *
 # from deepgtv import *
@@ -46,23 +47,6 @@ def resize_image(image_path, target_size=(512, 512)):
     cv2.imwrite(image_path, img)  # Lưu ảnh sau khi thay đổi kích thước
 
 
-# implement model denoise
-def denoise_image(image_path):
-    # Load the image
-    # img = cv2.imread(image_path, cv2.IMREAD_COLOR)
-    img = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
-
-    # Convert the image to the format expected by the denoise model (e.g., scaling to [0, 1])
-    # img = img.astype(np.float32) / 255.0
-
-    
-    # Apply denoising using the model
-    denoised_img = denoise_image(image_path, gtv_model)
-
-    # Convert the denoised image back to [0, 255] range
-    # denoised_img = (denoised_img * 255.0).astype(np.uint8)
-
-    return denoised_img
 
 # Example usage:
 # denoised_image = denoise_image("input_image.jpg", denoise_model)
@@ -207,32 +191,22 @@ async def upload_and_process(file: UploadFile = File(...)):
 @app.post("/upload_and_denoise")
 async def upload_and_denoise(file: UploadFile = File(...)):
     try:
-        # Kiểm tra xem tệp gửi lên phải là ảnh PNG
-        if not file.filename.endswith(".png"):
-            return {"error": "Only PNG files are supported."}
 
         # Lưu file được gửi từ website
         file_content = await file.read()
-        hash_filename = generate_hash(file_content)
-        # Lưu lại với định dạng PNG
-        file_path = upload_folder / f"{hash_filename}.png"
-
-        with open(file_path, "wb") as buffer:
+        temp_file_path = tempfile.NamedTemporaryFile(delete=False, suffix=".png").name
+        with open(temp_file_path, "wb") as buffer:
             buffer.write(file_content)
 
-        # Denoise ảnh
-        # model_path = 'model/densenet.h5'
-        # denoised_image = denoise_image(file_path, model_path)
+        img = denoise_image(temp_file_path, gtv_model)
 
-        ref_image_path = Path("images") / "ref.png"
+        # Ghi ảnh đã được denoise vào thư mục tạm thời
+        denoised_temp_file_path = tempfile.NamedTemporaryFile(delete=False, suffix=".png").name
+        cv2.imwrite(denoised_temp_file_path, img)
 
-        # Lưu ảnh đã được denoise
-        denoised_file_path = upload_folder / f"{hash_filename}_denoised.png"
-        # cv2.imwrite(str(denoised_file_path), denoised_image)
-
-        # Trả về kết quả dưới dạng tệp ảnh
-        # return FileResponse(str(denoised_file_path))
-        return FileResponse(ref_image_path)
+        # Trả về đường dẫn của ảnh đã được denoise
+        return {"result": "success", "denoised_filepath": denoised_temp_file_path, "error": None}
+    
 
     except Exception as e:
         # return {"error": f"Error: {str(e)}"}

@@ -64,7 +64,7 @@ def load_gtv_model(model_path):
     supporting_matrix(opt)
     
     # Tạo đối tượng GTV
-    gtv = GTV(width=18, cuda=opt.cuda, opt=opt)
+    gtv = GTV(width=36, cuda=opt.cuda, opt=opt)
     device = torch.device("cuda") if cuda else torch.device("cpu")
     # Load trọng số đã được đào tạo
     gtv.load_state_dict(torch.load(model_path, map_location=device))
@@ -97,8 +97,8 @@ logger.info("GTV evaluation")
 def denoise_image(
     inp,
     gtv,
-    stride=18, #ảnh hưởng đến tốc độ denoise
-    width=128,
+    stride=36, #ảnh hưởng đến tốc độ denoise
+    width=512,
     prefix="_",
     verbose=0,
     opt=opt,
@@ -165,14 +165,14 @@ def denoise_image(
     logger.info("RANGE: {0} - {1}".format(d.min(), d.max()))
     d = d.transpose(1, 2, 0) / 255
     d = d[:,:,0]
-    if 0:
-        opath = args.output
-    else:
-        filename = inp.split("/")[-1]
-        opath = resroot + "/{0}_{1}".format(prefix, filename)
-        opath = opath[:-3] + "png"
+    # if 0:
+    #     opath = args.output
+    # else:
+    #     filename = inp.split("/")[-1]
+    #     opath = resroot + "/{0}_{1}".format(prefix, filename)
+    #     opath = opath[:-3] + "png"
     d = np.minimum(np.maximum(d, 0), 1)
-    plt.imsave(opath, d, cmap='gray')
+    # plt.imsave(opath, d, cmap='gray')
 
     return d
 
@@ -180,8 +180,8 @@ def denoise_image(
 def denoise_image2(
     sample,
     gtv,
-    stride=18, #ảnh hưởng đến tốc độ denoise
-    width=128,
+    stride=36, #ảnh hưởng đến tốc độ denoise
+    width=512,
     prefix="_",
     verbose=0,
     opt=opt,
