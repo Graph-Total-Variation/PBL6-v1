@@ -99,7 +99,7 @@ def denoise_image(
     gtv,
     stride=36, #ảnh hưởng đến tốc độ denoise
     width=512,
-    prefix="_",
+    prefix="img1",
     verbose=0,
     opt=opt,
     approx=False,
@@ -182,7 +182,7 @@ def denoise_image2(
     gtv,
     stride=36, #ảnh hưởng đến tốc độ denoise
     width=512,
-    prefix="_",
+    prefix="img2",
     verbose=0,
     opt=opt,
     approx=False,
@@ -254,6 +254,7 @@ def denoise_image2(
     #     filename = inp.split("/")[-1]
     #     opath = resroot + "/{0}_{1}".format(prefix, filename)
     #     opath = opath[:-3] + "png"
+    # opath = "PBL6-v1/deepgtv/result/img2.png"
     d = np.minimum(np.maximum(d, 0), 1)
     # plt.imsave(opath, d, cmap='gray')
     return d

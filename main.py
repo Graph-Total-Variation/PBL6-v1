@@ -9,7 +9,7 @@ import os
 from keras.utils import load_img, img_to_array
 from keras.models import load_model
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 import csv
 import cv2
 import tempfile
@@ -194,23 +194,31 @@ async def upload_and_denoise(file: UploadFile = File(...)):
 
         # Lưu file được gửi từ website
         file_content = await file.read()
-        temp_file_path = tempfile.NamedTemporaryFile(delete=False, suffix=".png").name
+
+        # hash_filename = generate_hash(file_content)
+        hash_filename = "temp_img"
+        temp_file_path = upload_folder / f"{hash_filename}.png"
+        # temp_file_path = tempfile.NamedTemporaryFile(delete=False, suffix=".png").name
         with open(temp_file_path, "wb") as buffer:
             buffer.write(file_content)
 
-        img = denoise_image(temp_file_path, gtv_model)
+        img_patch = str(temp_file_path)
+        img1 = denoise_image(img_patch, gtv_model)
+        # img2 = denoise_image2(file_content, gtv_model)
 
-        # Ghi ảnh đã được denoise vào thư mục tạm thời
+        opath = str(upload_folder) + "/result.png"
+        plt.imsave(opath, img1, cmap='gray')
+
         denoised_temp_file_path = tempfile.NamedTemporaryFile(delete=False, suffix=".png").name
-        cv2.imwrite(denoised_temp_file_path, img)
-
+        cv2.imwrite(denoised_temp_file_path, img1)
+        serializable_list = img1.tolist()
         # Trả về đường dẫn của ảnh đã được denoise
-        return {"result": "success", "denoised_filepath": denoised_temp_file_path, "error": None}
+        return JSONResponse(content={"result": serializable_list, "filepath": opath, "error": None})
     
 
     except Exception as e:
         # return {"error": f"Error: {str(e)}"}
-        return {"result": '', "filepath": "", "error": f"Error: {str(e)}"}
+        return JSONResponse(content={"result": None , "filepath": "error", "error": f"Error: {str(e)}"})
 
 
 def save_feedback_to_csv(image_path: str, feedback: int):
