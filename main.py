@@ -1,5 +1,6 @@
-import shutil
-from io import BytesIO
+import requests
+from requests.auth import HTTPBasicAuth
+import io
 from fastapi import File, UploadFile, FastAPI, Form, HTTPException
 from pathlib import Path
 import hashlib
@@ -10,9 +11,13 @@ from keras.utils import load_img, img_to_array
 from keras.models import load_model
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
+from PIL import Image
 import csv
 import cv2
 import tempfile
+import base64
+import pyrebase
+
 
 from deepgtv.runcc import *
 # from deepgtv import *
@@ -33,6 +38,21 @@ upload_folder = Path("uploads")
 upload_folder.mkdir(parents=True, exist_ok=True)
 
 gtv_model = load_gtv_model("deepgtv/model/GTV_13g5.pkl")
+Config = {
+  "apiKey": "AIzaSyAk7msp7PhRI0Tx8twH4XoLAw8_ITo_sqQ",
+  "authDomain": "pbl6-a6a2b.firebaseapp.com",
+  "projectId": "pbl6-a6a2b",
+  'databaseURL':"https://pbl6-a6a2b-default-rtdb.firebaseio.com",
+  "storageBucket": "pbl6-a6a2b.appspot.com",
+  "messagingSenderId": "1034015281754",
+  "appId": "1:1034015281754:web:046c04e0d4bcc89204fe63",
+  "measurementId": "G-P76MGJZH33",
+  "serviceAccount": "uploads/pbl6-a6a2b-firebase-adminsdk-5kepy-144470f96a.json"
+};
+
+firebase = pyrebase.initialize_app(Config)
+# database = firebase.database()
+storage = firebase.storage()
 
 def generate_hash(file_content):
     hash_object = hashlib.sha256()
@@ -46,36 +66,23 @@ def resize_image(image_path, target_size=(512, 512)):
     img = cv2.resize(img, target_size)
     cv2.imwrite(image_path, img)  # Lưu ảnh sau khi thay đổi kích thước
 
+#up anh len firebase storage 
+def upload_save(image_data, image_name):
+    pth = "result/" + image_name
+    storage.child(image_name).put(image_data, content_type="image/png")
+    image_url = storage.child(image_name).get_url(image_name)
+    return image_url
 
-
-# Example usage:
-# denoised_image = denoise_image("input_image.jpg", denoise_model)
-# cv2.imwrite("denoised_image.jpg", denoised_image)
-
-# implement model
 
 
 def preprocess_image(image_path, target_size=(256, 256)):
     img = load_img(image_path, target_size=target_size)
     x = img_to_array(img)
     x = x.reshape((1,) + x.shape)
-    x /= 255
+    # x /= 255
     return x
 
 
-def predict_image(image_data, model_path):
-    # Load model
-    model = load_model(model_path)
-    # Make prediction
-    prediction = model.predict(image_data)
-    # Get predicted class
-    predicted_class = np.argmax(prediction)
-
-    if predicted_class == 0:
-        predicted_label = "Human"
-    else:
-        predicted_label = "AI"
-    return predicted_label
 
 
 def save_image(response, filename):
@@ -84,26 +91,23 @@ def save_image(response, filename):
 
 # face detection
 
+def image_to_base64(image_np):
+    # Chuyển đổi mảng NumPy thành đối tượng PIL
+    image_pil = Image.fromarray(np.uint8(image_np))
 
-def contains_human_face(image_path):
-    try:
-        img = cv2.imread(image_path)
-        gray_image = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    # Tạo đối tượng BytesIO để lưu trữ dữ liệu base64
+    buffer = io.BytesIO()
 
-        face_classifier = cv2.CascadeClassifier(
-            cv2.data.haarcascades + "haarcascade_frontalface_default.xml")
+    # Lưu ảnh dưới dạng base64 vào đối tượng BytesIO
+    image_pil.save(buffer, format="PNG")
+    base64_image = base64.b64encode(buffer.getvalue()).decode("utf-8")
 
-        faces = face_classifier.detectMultiScale(
-            gray_image, scaleFactor=1.1, minNeighbors=5, minSize=(40, 40))
+    return base64_image
 
-        return len(faces) > 0
-    except Exception as e:
-        print("Error during face detection:", str(e))
-        return False
 
 
 @app.get("/predict_url")
-async def say_hello(url: str):
+async def predict_url(url: str):
     try:
         print(f"URL: {url}")
         response = requests.get(url)
@@ -112,7 +116,7 @@ async def say_hello(url: str):
         h = hashlib.sha256()
         h.update(response.content)
         checksum = h.hexdigest()
-        file_path = os.path.join(upload_folder, f"{checksum}.jpg")
+        file_path = os.path.join(upload_folder, f"temp.png")
 
         save_image(response, file_path)
         with open(file_path, "rb") as f:
@@ -121,71 +125,15 @@ async def say_hello(url: str):
         # Process the uploaded image
         processed_image = preprocess_image(str(file_path))
 
-        # Load model from file
-        model_path = 'models/densenet.h5'
+        img = denoise_image(str(file_path),gtv_model)
 
-        # Predict image
-        predicted_class = predict_image(processed_image, model_path)
+        link = upload_save(img,checksum)
 
-        # Print image path and predicted class
-        print("Image path:", file_path)
-        print("Predicted class:", predicted_class)
-
-        save = 0
-        if predicted_class == "AI":
-            save = 1
-
-        file_path_str = str(file_path)
-        # Save to CSV
-        if not os.path.exists('predict.csv') or file_path_str not in open('predict.csv').read():
-            with open('predict.csv', mode='a', newline='') as file:
-                writer = csv.writer(file, delimiter=',',
-                                    quotechar='"', quoting=csv.QUOTE_MINIMAL)
-                writer.writerow([file_path, save])
-
-        return {"result": predicted_class, "url": f"{url}", "filepath": f"{str(file_path)}", "error": "none"}
-
+        return JSONResponse(content={ "filepath": link, "error": None})
     except Exception as e:
-        return {"result": "", "url": "", "filepath": '', "error": f"Error: {str(e)}"}
+        return JSONResponse(content={ "filepath": "error", "error": f"Error: {str(e)}"})
 
 
-@app.post("/upload_and_process")
-async def upload_and_process(file: UploadFile = File(...)):
-    try:
-        # Lưu file được gửi từ website
-        file_content = await file.read()
-        hash_filename = generate_hash(file_content)
-        file_path = upload_folder / f"{hash_filename}.jpg"
-
-        with open(file_path, "wb") as buffer:
-            buffer.write(file_content)
-
-        if contains_human_face(file_path):
-            # Nếu ảnh chứa khuôn mặt, tiếp tục xử lý và dự đoán
-            processed_image = preprocess_image(str(file_path))
-            model_path = 'models/densenet.h5'
-            predicted_class = predict_image(processed_image, model_path)
-
-            save = 0
-            if predicted_class == "AI":
-                save = 1
-
-            file_path_str = str(file_path)
-            # Lưu vào CSV nếu file_path chưa tồn tại trong predict.csv
-            if not os.path.exists('predict.csv') or file_path_str not in open('predict.csv').read():
-                with open('predict.csv', mode='a', newline='') as file:
-                    writer = csv.writer(
-                        file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
-                    writer.writerow([file_path, save])
-
-            return {"result": predicted_class, "filepath": f"{file_path_str}", "error": 'none'}
-        else:
-            return {"result": '', "filepath": "", "error": "Uploaded image is not a face!"}
-
-    except Exception as e:
-        return {"result": '', "filepath": "", "error": f"Error: {str(e)}"}
-
-# button correct
 
 
 @app.post("/upload_and_denoise")
@@ -196,8 +144,8 @@ async def upload_and_denoise(file: UploadFile = File(...)):
         file_content = await file.read()
 
         # hash_filename = generate_hash(file_content)
-        hash_filename = "temp_img"
-        temp_file_path = upload_folder / f"{hash_filename}.png"
+        hash_filename = generate_hash(file_content)
+        temp_file_path = upload_folder / f"temp.png"
         # temp_file_path = tempfile.NamedTemporaryFile(delete=False, suffix=".png").name
         with open(temp_file_path, "wb") as buffer:
             buffer.write(file_content)
@@ -205,20 +153,31 @@ async def upload_and_denoise(file: UploadFile = File(...)):
         img_patch = str(temp_file_path)
         img1 = denoise_image(img_patch, gtv_model)
         # img2 = denoise_image2(file_content, gtv_model)
+        link = upload_save(img1,hash_filename)
 
-        opath = str(upload_folder) + "/result.png"
-        plt.imsave(opath, img1, cmap='gray')
-
-        denoised_temp_file_path = tempfile.NamedTemporaryFile(delete=False, suffix=".png").name
-        cv2.imwrite(denoised_temp_file_path, img1)
-        serializable_list = img1.tolist()
-        # Trả về đường dẫn của ảnh đã được denoise
-        return JSONResponse(content={"result": serializable_list, "filepath": opath, "error": None})
+        return JSONResponse(content={ "filepath": link, "error": None})
     
 
     except Exception as e:
-        # return {"error": f"Error: {str(e)}"}
-        return JSONResponse(content={"result": None , "filepath": "error", "error": f"Error: {str(e)}"})
+        return JSONResponse(content={ "filepath": "error", "error": f"Error: {str(e)}"})
+    
+@app.post("/get_image_base64")
+async def get_image_base64(file: UploadFile = File(...)):
+    try:
+        file_content = await file.read()
+        hash_filename = generate_hash(file_content)
+        file_path = upload_folder / f"temp.png"
+
+        with open(file_path, "wb") as buffer:
+            buffer.write(file_content) 
+
+        img_pth = upload_save(file_content,hash_filename)
+        
+        return JSONResponse(content={"filepath": img_pth, "error": None})
+
+    except Exception as e:
+        # Xử lý nếu có lỗi
+        return JSONResponse(content={"filepath":None, "error": f"Error: {str(e)}"})
 
 
 def save_feedback_to_csv(image_path: str, feedback: int):
@@ -267,15 +226,3 @@ async def submit_feedback(feedback_data: dict):
 
     return {"message": "done"}
 
-
-# @app.post("/uploadfile/")
-# async def upload_file(file: UploadFile):
-#     # Lưu tệp tải lên tạm thời
-#     with open(f"temp_{file.filename}", "wb") as temp_file:
-#         shutil.copyfileobj(file.file, temp_file)
-
-#     # Thực hiện xử lý ảnh ở đây
-#     # Đảm bảo bạn có hàm hoặc module xử lý ảnh để thực hiện công việc này
-
-#     # Trả kết quả (ví dụ: nội dung ảnh đã xử lý)
-#     return {"filename": file.filename, "size": file.file.read()}
