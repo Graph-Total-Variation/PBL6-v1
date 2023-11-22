@@ -121,7 +121,7 @@ def main(
             # outputs = gtv.forward_approx(inputs, debug=0)
             outputs = gtv(inputs, debug=0)
             loss = criterion(outputs, labels)
-            loss1 = criterion1(outputs)
+            # loss1 = criterion1(outputs)
             alpha = 0.1
             # loss = loss + alpha * loss1 
 
