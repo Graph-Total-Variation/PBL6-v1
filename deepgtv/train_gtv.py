@@ -8,16 +8,33 @@ from torch.utils.data import DataLoader
 import torchvision.transforms as transforms
 import torch.optim as optim
 import matplotlib.pyplot as plt
-# from dgtv.my_dgtv import *
-from deepgtv.dgtv.dgtv import *
+from dgtv.dgtv import *
 import pickle
 import logging
 import sys
-
-
-
-
-
+# from pytorch_msssim import ssim, ms_ssim, SSIM, MS_SSIM
+def get_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-m", "--model", default="GTV.pkl")
+    parser.add_argument("-c", "--cont")
+    parser.add_argument("--batch", default=64)
+    parser.add_argument("--lr", default=8e-6, type=float)
+    parser.add_argument("--epoch", default=200)
+    parser.add_argument("--umax", default=1000, type=float)
+    parser.add_argument("--umin", default=0.001, type=float)
+    parser.add_argument("--seed", default=0, type=float)
+    parser.add_argument("--width", default=16, type=int)
+    parser.add_argument("--train", default="gauss_batch")
+    
+    args = parser.parse_args()
+    return args
+class RMSLELoss(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.mse = nn.MSELoss(reduction='mean')
+        
+    def forward(self, pred, actual):
+        return torch.sqrt(self.mse(torch.log(pred + 1), torch.log(actual + 1)))
 def main(
     seed, model_name, cont=None, optim_name=None, subset=None, epoch=100, args=None
 ):
@@ -36,13 +53,14 @@ def main(
     SAVEPATH = PATH.split(".")[-1]
     SAVEDIR = "".join(PATH.split(".")[:-1]) + "_"
     batch_size = opt.batch_size
-    if not subset:
+    if subset:
         _subset = ["10", "1", "7", "8", "9"]
         # _subset = ["1", "3", "5", "7", "9"]
         opt.logger.info("Train: {0}".format(_subset))
         subset = [i + "_" for i in _subset]
     else:
-        subset = [i + "_" for i in subset]
+        subset = [i.split(".")[0] + "_" for i in os.listdir(os.path.join(opt.train,"ref"))]
+        opt.logger.info("Train: {0}".format(subset))
     dataset = RENOIR_Dataset(
         img_dir=os.path.join(opt.train),
         transform=transforms.Compose([standardize(normalize=False), ToTensor()]),
@@ -86,11 +104,9 @@ def main(
         opt.logger.info("LOAD PREVIOUS GTV:", cont)
     if cuda:
         gtv.cuda()
-    
-    # criterion = nn.MSELoss()
-    criterion = CustomLoss()
-    # criterion1 = TVLoss(TVLoss_weight=0.1)  
-
+    #MS_SSIM
+    criterion = nn.MSELoss()
+    #criterion = SSIM(data_range=255, size_average=True, channel=1)
     optimizer = optim.SGD(gtv.parameters(), lr=opt.lr, momentum=opt.momentum)
 
     if cont:
@@ -121,10 +137,7 @@ def main(
             # outputs = gtv.forward_approx(inputs, debug=0)
             outputs = gtv(inputs, debug=0)
             loss = criterion(outputs, labels)
-            # loss1 = criterion1(outputs)
-            alpha = 0.1
-            # loss = loss + alpha * loss1 
-
+            #loss = 1 - criterion(outputs, labels)
             loss.backward()
             torch.nn.utils.clip_grad_norm_(gtv.parameters(), 5e1)
 
@@ -136,7 +149,10 @@ def main(
                     histW = gtv(inputs, debug=1)
                     opt.logger.info(
                         "\tLOSS: {0:.8f}".format(
+                            #torch.sqrt((torch.log(histW + 1) - torch.log(labels + 1)).square().mean()).item()
+                            #torch.abs(histW - labels).mean().item()
                             (histW - labels).square().mean().item()
+                            #ssim(histW, labels).item()
                         )
                     )
                 if opt.ver:  # experimental version
@@ -175,7 +191,12 @@ def main(
             with torch.no_grad():
                 histW = gtv(inputs, debug=1)
                 opt.logger.info(
-                    "\tLOSS: {0:.8f}".format((histW - labels).square().mean().item())
+                    "\tLOSS: {0:.8f}".format(
+                        #torch.sqrt(torch.log(histW + 1) - torch.log(labels + 1).square().mean()).item()
+                        #torch.abs(histW - labels).mean().item()
+                        (histW - labels).square().mean().item()
+                        #ssim(histW, labels).item()
+                        )
                 )
             if opt.ver:  # experimental version
                 opt.logger.info(
@@ -225,7 +246,6 @@ def main(
     ax.set(ylim=[0, ax.get_ylim()[1] * 1.05])
     fig.savefig("loss.png")
 
-
 opt = OPT(
     batch_size=50,
     channels=1,
@@ -235,32 +255,10 @@ opt = OPT(
     u_min=50,
     cuda=True if torch.cuda.is_available() else False,
 )
+
 # batch_size = 50, admm_iter=4, prox_iter=3, delta=.1, channels=3, eta=.3, u=50, lr=8e-6, momentum=0.9, u_max=65, u_min=50)
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-
-    # parser.add_argument("-m", "--model", default="GTV.pkl")
-    # parser.add_argument("-c", "--cont")
-    # parser.add_argument("--batch", default=64)
-    # parser.add_argument("--lr", default=8e-6, type=float)
-    # parser.add_argument("--epoch", default=200)
-    # parser.add_argument("--umax", default=1000, type=float)
-    # parser.add_argument("--umin", default=0.001, type=float)
-    # parser.add_argument("--seed", default=0, type=float)
-    # parser.add_argument("--width", default=36, type=int)
-    # parser.add_argument("--train", default="gauss_batch")
-    parser.add_argument("-m", "--model", default="GTV.pkl")
-    parser.add_argument("-c", "--cont")
-    parser.add_argument("--batch", default=64)
-    parser.add_argument("--lr", default=8e-6, type=float)
-    parser.add_argument("--epoch", default=200)
-    parser.add_argument("--umax", default=1000, type=float)
-    parser.add_argument("--umin", default=0.001, type=float)
-    parser.add_argument("--seed", default=0, type=float)
-    parser.add_argument("--width", default=36, type=int)
-    parser.add_argument("--train", default="gauss_batch")
-    
-    args = parser.parse_args()
+    args = get_args()
     if args.cont:
         cont = args.cont
     else:
@@ -294,8 +292,7 @@ if __name__ == "__main__":
         model_name=args.model,
         cont=cont,
         epoch=int(args.epoch),
-        # subset=['1'],
-        subset=['1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16'],
+        subset=None,
         args=args,
     )
 
