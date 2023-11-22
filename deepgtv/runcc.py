@@ -52,26 +52,26 @@ def load_gtv_model(model_path):
         u_min=0.0001,
         cuda=True if torch.cuda.is_available() else False
     )
-    
+
     # Thiết lập logger
     import logging
     logger = logging.getLogger("root")
     logger.addHandler(logging.StreamHandler(sys.stdout))
     opt.logger = logger
     opt.legacy = True
-    
+
     # Chuẩn bị ma trận hỗ trợ
     supporting_matrix(opt)
-    
+
     # Tạo đối tượng GTV
     gtv = GTV(width=16, cuda=opt.cuda, opt=opt)
     device = torch.device("cuda") if cuda else torch.device("cpu")
     # Load trọng số đã được đào tạo
     gtv.load_state_dict(torch.load(model_path, map_location=device))
     # gtv.cuda()
-    # width = gtv.opt.width
-    # opt.width = width
-    # opt = gtv.opt
+    width = gtv.opt.width
+    opt.width = width
+    opt = gtv.opt
 
     return gtv
  
@@ -97,7 +97,7 @@ logger.info("GTV evaluation")
 def denoise_image(
     inp,
     gtv,
-    stride=16, #ảnh hưởng đến tốc độ denoise
+    stride=8, #ảnh hưởng đến tốc độ denoise
     width=128,
     prefix="img1",
     verbose=0,

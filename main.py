@@ -1,6 +1,4 @@
 import requests
-from requests.auth import HTTPBasicAuth
-import io
 from fastapi import File, UploadFile, FastAPI, Form, HTTPException
 from pathlib import Path
 import hashlib
@@ -8,14 +6,10 @@ import requests
 import numpy as np
 import os
 from keras.utils import load_img, img_to_array
-from keras.models import load_model
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
-from PIL import Image
 import csv
 import cv2
-import tempfile
-import base64
 import pyrebase
 
 
@@ -37,8 +31,8 @@ app.add_middleware(
 upload_folder = Path("uploads")
 upload_folder.mkdir(parents=True, exist_ok=True)
 
-gtv_model = load_gtv_model("deepgtv/model/GTV_13g5.pkl")
-# gtv_model99 = load_gtv_model("deepgtv/model/GTV_99.pkl")
+# gtv_model = load_gtv_model("deepgtv/model/GTV_13g5.pkl")
+gtv_model99 = load_gtv_model("deepgtv/model/GTV_99.pkl")
 
 Config = {
   "apiKey": "AIzaSyAk7msp7PhRI0Tx8twH4XoLAw8_ITo_sqQ",
@@ -85,28 +79,9 @@ def preprocess_image(image_path, target_size=(256, 256)):
     return x
 
 
-
-
 def save_image(response, filename):
     with open(filename, "wb") as f:
         f.write(response.content)
-
-# face detection
-
-def image_to_base64(image_np):
-    # Chuyển đổi mảng NumPy thành đối tượng PIL
-    image_pil = Image.fromarray(np.uint8(image_np))
-
-    # Tạo đối tượng BytesIO để lưu trữ dữ liệu base64
-    buffer = io.BytesIO()
-
-    # Lưu ảnh dưới dạng base64 vào đối tượng BytesIO
-    image_pil.save(buffer, format="PNG")
-    base64_image = base64.b64encode(buffer.getvalue()).decode("utf-8")
-
-    return base64_image
-
-
 
 @app.get("/predict_url")
 async def predict_url(url: str):
@@ -127,7 +102,7 @@ async def predict_url(url: str):
         # Process the uploaded image
         processed_image = preprocess_image(str(file_path))
 
-        img = denoise_image(str(file_path),gtv_model)
+        img = denoise_image(str(file_path),gtv_model99)
 
         link = upload_save(img,checksum)
 
@@ -153,9 +128,9 @@ async def upload_and_denoise(file: UploadFile = File(...)):
             buffer.write(file_content)
 
         img_patch = str(temp_file_path)
-        img1 = denoise_image(img_patch, gtv_model)
-        # img2 = denoise_image2(file_content, gtv_model)
-        link = upload_save(img1,hash_filename)
+        # img1 = denoise_image(img_patch, gtv_model99)
+        img2 = denoise_image2(file_content, gtv_model99)
+        link = upload_save(img2,hash_filename)
 
         return JSONResponse(content={ "filepath": link, "error": None})
     
