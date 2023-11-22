@@ -64,7 +64,7 @@ def load_gtv_model(model_path):
     supporting_matrix(opt)
     
     # Tạo đối tượng GTV
-    gtv = GTV(width=36, cuda=opt.cuda, opt=opt)
+    gtv = GTV(width=16, cuda=opt.cuda, opt=opt)
     device = torch.device("cuda") if cuda else torch.device("cpu")
     # Load trọng số đã được đào tạo
     gtv.load_state_dict(torch.load(model_path, map_location=device))
@@ -97,8 +97,8 @@ logger.info("GTV evaluation")
 def denoise_image(
     inp,
     gtv,
-    stride=36, #ảnh hưởng đến tốc độ denoise
-    width=512,
+    stride=16, #ảnh hưởng đến tốc độ denoise
+    width=128,
     prefix="img1",
     verbose=0,
     opt=opt,
@@ -180,8 +180,8 @@ def denoise_image(
 def denoise_image2(
     sample,
     gtv,
-    stride=36, #ảnh hưởng đến tốc độ denoise
-    width=512,
+    stride=16, #ảnh hưởng đến tốc độ denoise
+    width=128,
     prefix="img2",
     verbose=0,
     opt=opt,
@@ -260,7 +260,7 @@ def denoise_image2(
     return d
 
 
-def patch_merge(P, stride=36, shape=None, shapeorg=None):
+def patch_merge(P, stride=8, shape=None, shapeorg=None):
     S1, S2 = P.shape[0], P.shape[1]
     m = P.shape[-1]
 

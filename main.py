@@ -38,6 +38,8 @@ upload_folder = Path("uploads")
 upload_folder.mkdir(parents=True, exist_ok=True)
 
 gtv_model = load_gtv_model("deepgtv/model/GTV_13g5.pkl")
+# gtv_model99 = load_gtv_model("deepgtv/model/GTV_99.pkl")
+
 Config = {
   "apiKey": "AIzaSyAk7msp7PhRI0Tx8twH4XoLAw8_ITo_sqQ",
   "authDomain": "pbl6-a6a2b.firebaseapp.com",
