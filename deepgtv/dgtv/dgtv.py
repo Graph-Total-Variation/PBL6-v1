@@ -5,6 +5,7 @@ import numpy as np
 import os
 import cv2
 import torch.nn as nn
+from sklearn.neighbors import NearestNeighbors
 
 from torchvision.utils import save_image
 from torch.utils.data import Dataset, DataLoader
@@ -57,17 +58,15 @@ class cnnu(nn.Module):
     def __init__(self, u_min=1e-3, opt=None):
         super(cnnu, self).__init__()
         self.layer = nn.Sequential(
-            nn.Conv2d(opt.channels, 32, kernel_size=3, stride=2, padding=1),
-            nn.LeakyReLU(0.05),
-            nn.Conv2d(32, 32, kernel_size=3, stride=1, padding=1),
+            nn.Conv2d(opt.channels, 32, kernel_size=3, stride=1, padding=1),
             nn.LeakyReLU(0.05),
             nn.MaxPool2d(kernel_size=2, stride=2, ceil_mode=True),
             nn.Conv2d(32, 32, kernel_size=3, stride=1, padding=1),
             nn.LeakyReLU(0.05),
             nn.MaxPool2d(kernel_size=2, stride=2, ceil_mode=True),
-            nn.Conv2d(32, 32, kernel_size=3, stride=1, padding=1),
-            nn.LeakyReLU(0.05),
-            nn.MaxPool2d(kernel_size=2, stride=2, ceil_mode=True),
+            # nn.Conv2d(32, 32, kernel_size=3, stride=1, padding=1),
+            # nn.LeakyReLU(0.05),
+            # nn.MaxPool2d(kernel_size=2, stride=2, ceil_mode=True),
         )
 
         self.opt = opt
@@ -127,19 +126,6 @@ class RENOIR_Dataset(Dataset):
             for i in self.rimg_name
             if i.split(".")[-1].lower() in ["jpeg", "jpg", "png", "bmp", "tif"]
         ]
-
-        if self.subset:
-            nimg_name = list()
-            rimg_name = list()
-            for i in range(len(self.nimg_name)):
-                for j in self.subset:
-                    if j in self.nimg_name[i]:
-                        nimg_name.append(self.nimg_name[i])
-                        # if j in self.rimg_name[i]:
-                        rimg_name.append(self.rimg_name[i])
-            self.nimg_name = sorted(nimg_name)
-            self.rimg_name = sorted(rimg_name)
-
         self.transform = transform
 
     def __len__(self):
@@ -259,6 +245,19 @@ def connected_adjacency(image, connect=8, patch_size=(1, 1)):
         d4 = d2[1:-1]
         upper_diags = ss.diags([d1, d2, d3, d4], [1, c - 1, c, c + 1])
         return upper_diags + upper_diags.T
+    elif connect == "KNN":
+        data = np.argwhere(image)
+        k = 8
+        if len(data) < k:
+            k = len(data)
+        knn = NearestNeighbors(n_neighbors=k, metric="euclidean")
+        knn.fit(data)
+        adjacency_matrix = np.zeros((len(data), len(data)))
+        for i in range(len(data)):
+            _, indices = knn.kneighbors([data[i]], n_neighbors=k)
+            for j in indices[0]:
+                adjacency_matrix[i, j] = 1
+        return adjacency_matrix
 
 
 def weights_init_normal(m):
@@ -273,9 +272,9 @@ class OPT:
     def __init__(
         self,
         batch_size=100,
-        width=36,
+        width=16,
         connectivity="8",
-        channels=3,
+        channels=1,
         u_max=100,
         u_min=10,
         lr=1e-4,
@@ -323,39 +322,6 @@ class OPT:
             )
         )
 
-class TVLoss(nn.Module):
-    def __init__(self, TVLoss_weight=1):
-        super(TVLoss, self).__init__()
-        self.TVLoss_weight = TVLoss_weight
-
-    def forward(self, x):
-        batch_size = x.size()[0]
-        h_x = x.size()[2]
-        w_x = x.size()[3]
-        count_h = self._tensor_size(x[:, :, 1:, :])
-        count_w = self._tensor_size(x[:, :, :, 1:])
-        h_tv = torch.pow((x[:, :, 1:, :] - x[:, :, :h_x - 1, :]), 2).sum()
-        w_tv = torch.pow((x[:, :, :, 1:] - x[:, :, :, :w_x - 1]), 2).sum()
-        return self.TVLoss_weight * 2 * (h_tv / count_h + w_tv / count_w) / batch_size
-
-    def _tensor_size(self, t):
-        return t.size()[1] * t.size()[2] * t.size()[3]
-
-class CustomLoss(nn.Module):
-    #custom loss nay chi giup tang ssim va psnr len mot chut so voi mse
-    def __init__(self):
-        super(CustomLoss, self).__init__()
-
-    def forward(self, predicted, target):
-        mse_loss = nn.MSELoss(reduction='mean')
-        l1_loss = nn.L1Loss()
-        tv_loss = TVLoss(TVLoss_weight=1)
-
-        total_loss = mse_loss(predicted,target) + l1_loss(predicted,target) + 0.1 * tv_loss(predicted)
-        
-        return total_loss
-
-
 
 class GTV(nn.Module):
     """
@@ -364,7 +330,7 @@ class GTV(nn.Module):
 
     def __init__(
         self,
-        width=36,
+        width=16,
         prox_iter=5,
         u_min=1e-3,
         u_max=1,
@@ -429,7 +395,7 @@ class GTV(nn.Module):
             self.opt.H.matmul(E.view(E.shape[0], E.shape[1], self.opt.width ** 2, 1))
             ** 2
         )
-
+        
         w = torch.exp(-(Fs.sum(axis=1)) / (s ** 2))
         if debug:
             s = f"Sample WEIGHT SUM: {w[0, :, :].sum().item():.4f} || Mean Processed u: {u.mean().item():.4f}"
@@ -513,7 +479,7 @@ class GTV(nn.Module):
             P = self.forward(P)
         return P
 
-    def qpsolve(self, L, u, y, Im, channels=3):
+    def qpsolve(self, L, u, y, Im, channels=1):
         """
         Solve equation (2) using (6)
         """
