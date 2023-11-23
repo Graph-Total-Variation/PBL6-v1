@@ -64,12 +64,17 @@ def resize_image(image_path, target_size=(512, 512)):
 
 #up anh len firebase storage 
 def upload_save(image_data, image_name):
-    pth = "result/" + image_name
+    pth =  image_name
     storage.child(image_name).put(image_data, content_type="image/png")
+    # storage.child(image_name).put(image_data)
     image_url = storage.child(image_name).get_url(image_name)
     return image_url
 
-
+def upload_storage(image_path, image_name):
+    storage.child(image_name).put(image_path, content_type="image/png")
+    # storage.child(image_name).put(image_data)
+    image_url = storage.child(image_name).get_url(image_name)
+    return image_url
 
 def preprocess_image(image_path, target_size=(256, 256)):
     img = load_img(image_path, target_size=target_size)
@@ -101,12 +106,18 @@ async def predict_url(url: str):
 
         # Process the uploaded image
         processed_image = preprocess_image(str(file_path))
-
         img = denoise_image(str(file_path),gtv_model99)
 
-        link = upload_save(img,checksum)
+        opath = "uploads/result.png"
+        plt.imsave(opath, img, cmap='gray')
+        hash_filename = generate_hash(img)
+        # luu anh len storage
+        storage.child(hash_filename).put(opath, content_type="image/png")
+        image_url = storage.child(hash_filename).get_url(hash_filename)
 
-        return JSONResponse(content={ "filepath": link, "error": None})
+        # link = upload_save(img,checksum)
+
+        return JSONResponse(content={ "filepath": image_url, "error": None})
     except Exception as e:
         return JSONResponse(content={ "filepath": "error", "error": f"Error: {str(e)}"})
 
@@ -116,23 +127,26 @@ async def predict_url(url: str):
 @app.post("/upload_and_denoise")
 async def upload_and_denoise(file: UploadFile = File(...)):
     try:
-
         # Lưu file được gửi từ website
         file_content = await file.read()
-
         # hash_filename = generate_hash(file_content)
-        hash_filename = generate_hash(file_content)
-        temp_file_path = upload_folder / f"temp.png"
-        # temp_file_path = tempfile.NamedTemporaryFile(delete=False, suffix=".png").name
-        with open(temp_file_path, "wb") as buffer:
-            buffer.write(file_content)
+        file_path = upload_folder / f"temp.png"
 
-        img_patch = str(temp_file_path)
+        with open(file_path, "wb") as buffer:
+            buffer.write(file_content) 
+
+        img_patch = str(file_path)
         img1 = denoise_image(img_patch, gtv_model99)
         # img2 = denoise_image2(file_content, gtv_model99)
-        link = upload_save(img1,hash_filename)
+        opath = "uploads/result.png"
+        plt.imsave(opath, img1, cmap='gray')
+        hash_filename = generate_hash(img1)
+        # luu anh len storage
+        storage.child(hash_filename).put(opath, content_type="image/png")
+        image_url = storage.child(hash_filename).get_url(hash_filename)
+        # link = upload_storage(opath,hash_filename)
 
-        return JSONResponse(content={ "filepath": link, "error": None})
+        return JSONResponse(content={ "filepath": image_url, "error": None})
     
 
     except Exception as e:
@@ -142,15 +156,20 @@ async def upload_and_denoise(file: UploadFile = File(...)):
 async def get_image_base64(file: UploadFile = File(...)):
     try:
         file_content = await file.read()
-        hash_filename = generate_hash(file_content)
+        # hash_filename = generate_hash(file_content)
         file_path = upload_folder / f"temp.png"
 
         with open(file_path, "wb") as buffer:
             buffer.write(file_content) 
 
-        img_pth = upload_save(file_content,hash_filename)
+        img_patch = str(file_path)
+        img1 = denoise_image(img_patch, gtv_model99)
+        # img2 = denoise_image2(file_content, gtv_model99)
+        hash_filename = generate_hash(img1)
+        link = upload_save(img1,hash_filename)
+        # img_pth = upload_save(file_content,hash_filename)
         
-        return JSONResponse(content={"filepath": img_pth, "error": None})
+        return JSONResponse(content={"filepath": link, "error": None})
 
     except Exception as e:
         # Xử lý nếu có lỗi
