@@ -128,9 +128,9 @@ async def upload_and_denoise(file: UploadFile = File(...)):
             buffer.write(file_content)
 
         img_patch = str(temp_file_path)
-        # img1 = denoise_image(img_patch, gtv_model99)
-        img2 = denoise_image2(file_content, gtv_model99)
-        link = upload_save(img2,hash_filename)
+        img1 = denoise_image(img_patch, gtv_model99)
+        # img2 = denoise_image2(file_content, gtv_model99)
+        link = upload_save(img1,hash_filename)
 
         return JSONResponse(content={ "filepath": link, "error": None})
     

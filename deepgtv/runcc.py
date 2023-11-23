@@ -89,10 +89,10 @@ logger = logging.getLogger("root")
 logger.addHandler(logging.StreamHandler(sys.stdout))
 opt.logger = logger
 opt.legacy = True
-
 # Chuẩn bị ma trận hỗ trợ
 supporting_matrix(opt)
 logger.info("GTV evaluation")
+
 
 def denoise_image(
     inp,
@@ -106,7 +106,7 @@ def denoise_image(
     args=None,
     logger=logger
 ):
-    
+
     sample = cv2.imread(inp)
     if width is None:
         width = sample.shape[0]
@@ -122,7 +122,7 @@ def denoise_image(
     cuda = True if torch.cuda.is_available() else False
 
     dtype = torch.cuda.FloatTensor if cuda else torch.FloatTensor
-   
+
 
     tstart = time.time()
     T1 = sample
@@ -135,7 +135,7 @@ def denoise_image(
         .unfold(1, opt.width, stride)
     ).type(dtype)
     T2 = T2.contiguous()
-    
+
     # MAX_PATCH = args.multi
     MAX_PATCH = 500
     oT2s0 = T2.shape[0]
@@ -180,7 +180,7 @@ def denoise_image(
 def denoise_image2(
     sample,
     gtv,
-    stride=16, #ảnh hưởng đến tốc độ denoise
+    stride=8, #ảnh hưởng đến tốc độ denoise
     width=128,
     prefix="img2",
     verbose=0,
