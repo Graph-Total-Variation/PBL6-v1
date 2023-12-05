@@ -16,7 +16,7 @@ if cuda:
 else:
     dtype = torch.FloatTensor
 
-resroot = "uploads"
+resroot = "result"
 
 def get_args():
     parser = argparse.ArgumentParser()
@@ -99,7 +99,7 @@ def denoise_image(
     gtv,
     stride=8, #ảnh hưởng đến tốc độ denoise
     width=None,
-    prefix="img2",
+    prefix="img1",
     verbose=0,
     opt=opt,
     approx=False,
@@ -112,7 +112,6 @@ def denoise_image(
         width = sample.shape[0]
     else:
         sample = cv2.resize(sample, (width, width))
-        
     sample = cv2.cvtColor(sample, cv2.COLOR_RGB2GRAY)
     sample = np.expand_dims(sample, axis=2)
     sample = sample.transpose((2, 0, 1))
@@ -178,12 +177,11 @@ def denoise_image(
     return d
 
 
-
 def denoise_image2(
     sample,
     gtv,
     stride=8, #ảnh hưởng đến tốc độ denoise
-    width=None,
+    width=128,
     prefix="img2",
     verbose=0,
     opt=opt,
@@ -197,7 +195,6 @@ def denoise_image2(
         width = sample.shape[0]
     else:
         sample = cv2.resize(sample, (width, width))
-
     sample = cv2.cvtColor(sample, cv2.COLOR_RGB2GRAY)
     sample = np.expand_dims(sample, axis=2)
     sample = sample.transpose((2, 0, 1))
@@ -284,4 +281,3 @@ def patch_merge(P, stride=8, shape=None, shapeorg=None):
         rj = 0
 
     return (R / Rc)[:, : shapeorg[-1], : shapeorg[-1]]
-

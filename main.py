@@ -88,6 +88,17 @@ def save_image(response, filename):
     with open(filename, "wb") as f:
         f.write(response.content)
 
+def check_size(inp):
+    sample = cv2.imread(inp)
+    h, w, _ = sample.shape
+    if h > w:
+        delta = (h - w) // 2
+        black_bar = np.zeros((h, delta, 3), dtype=np.uint8)
+        result = np.concatenate((black_bar, sample, black_bar), axis=1)    
+        cv2.imwrite(inp, result)
+        # return result
+
+
 @app.get("/predict_url")
 async def predict_url(url: str):
     try:
@@ -105,7 +116,8 @@ async def predict_url(url: str):
             content = f.read()
 
         # Process the uploaded image
-        processed_image = preprocess_image(str(file_path))
+        # processed_image = preprocess_image(str(file_path))
+        check_size(str(file_path))
         img = denoise_image(str(file_path),gtv_model99)
 
         opath = "uploads/result.png"
@@ -134,7 +146,8 @@ async def upload_and_denoise(file: UploadFile = File(...)):
 
         with open(file_path, "wb") as buffer:
             buffer.write(file_content) 
-
+            
+        check_size(str(file_path))
         img_patch = str(file_path)
         img1 = denoise_image(img_patch, gtv_model99)
         # img2 = denoise_image2(file_content, gtv_model99)
